@@ -1,5 +1,12 @@
 # Changelog
 
+## v22.1 public preview — 2026-11-27
+
+- Restore 414 independently constructed, developer-authorized CC0 illustrations; retain all 57 existing developmental records unchanged (471 total).
+- Restore molecular families, subcategory filters, organoids and developmental cell categories.
+- Bind the added per-icon provenance to audited source blobs; preserve native editable geometry and IDs.
+- Rebuild the offline standalone; leave unresolved and branded artwork private.
+
 ## v22.0 public preview — 2026-11-27
 
 - First clean public distribution of the SCiFi editor, based on the v21 workspace and vector tools.

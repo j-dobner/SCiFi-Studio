@@ -8,3 +8,5 @@ authors:
     affiliation: "IUF - Leibniz-Institut für umweltmedizinische Forschung GmbH"
 repository-code: "https://github.com/j-dobner/SCiFi-Studio"
 abstract: "Offline-first, human-directed and AI-assisted scientific vector figure editor for stem cell research, developmental biology, molecular biology and laboratory workflows."
+version: "22.1"
+date-released: 2026-11-27

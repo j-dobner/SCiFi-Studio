@@ -28,7 +28,7 @@ SOFTWARE.
 <!--
 SCiFi ASSET NOTICE
 
-The 57 developmental illustrations included in this release are dedicated under the Creative Commons CC0 1.0 Universal dedication,
+The 471 original scientific illustrations included in this release are dedicated under the Creative Commons CC0 1.0 Universal dedication,
 to the extent permitted by law: https://creativecommons.org/publicdomain/zero/1.0/
 
 The UI icon paths include glyphs from / derived from Lucide icons and Feather icons.
@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v22.0 Preview — Stem Cell integrated Figure illustrator</title>
+<title>SCiFi Studio v22.1 Preview — Stem Cell integrated Figure illustrator</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -332,6 +332,17 @@ No historical artwork collections are included in this preview.
 <div class="toast" id="toast"></div>
 <script src="artwork/embryogenesis.js"></script>
 <script src="artwork/carnegie.js"></script>
+<script>const SCIFI_PUBLIC_ADDITIONAL=[];</script>
+<script src="artwork/scifi_native_organoid_assets-1.js"></script>
+<script src="artwork/scifi_native_organoid_assets-2.js"></script>
+<script src="artwork/scifi_builtin_development_v83_assets-1.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-1.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-2.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-3.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-4.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-5.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-6.js"></script>
+<script src="artwork/scifi_builtin_molecular_v71-7.js"></script>
 <script>
 'use strict';
 // SCiFi: Stem Cell integrated Figure illustrator — self-contained scientific SVG editing prototype.
@@ -361,8 +372,8 @@ const uiPaths={
 const ico=(name,size=17)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${uiPaths[name]||uiPaths.square}</svg>`;
 const base='fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
 const shape=s=>`<g ${base}>${s}</g>`;
-const assets=[...SCIFI_PUBLIC_EMBRYOGENESIS,...SCIFI_PUBLIC_CARNEGIE];
-const SCIFI_BUILTIN_LAB_ESSENTIALS_V4=[],SCIFI_BUILTIN_MOLECULAR_V71=[],SCIFI_MOLECULAR_SUBCATEGORIES=[];
+const assets=[...SCIFI_PUBLIC_EMBRYOGENESIS,...SCIFI_PUBLIC_CARNEGIE,...SCIFI_PUBLIC_ADDITIONAL];
+const SCIFI_BUILTIN_LAB_ESSENTIALS_V4=[],SCIFI_BUILTIN_MOLECULAR_V71=SCIFI_PUBLIC_ADDITIONAL.filter(a=>a.category==='Molecular Biology Essentials'),SCIFI_MOLECULAR_SUBCATEGORIES=[...new Set(SCIFI_BUILTIN_MOLECULAR_V71.map(a=>a.originalCategory))].sort();
 const byId=Object.fromEntries(assets.map(a=>[a.id,a]));
 const customAssets=[]; // Save a project JSON or export icon packs for persistent storage.
 const packRecords=[]; // Named, searchable subcollections of custom icons.
@@ -1931,7 +1942,7 @@ function renderInspector(){let o=selectedObj(),el=$('#inspector');
  bind('duplicateProp','click',duplicate);bind('deleteProp','click',deleteSelected);
  bind('bringFront','click',()=>transact(()=>{objects=objects.filter(i=>i.id!==o.id).concat(o)}));bind('sendBack','click',()=>transact(()=>{objects=[o,...objects.filter(i=>i.id!==o.id)]}));wireAlignInspector()}
 function renderLayers(){let el=$('#layersList');if(!el)return;el.innerHTML=objects.slice().reverse().map(o=>{let label=byId[o.type]?.name||(o.type==='text'?o.text:o.type==='rect'?'Rectangle':o.type==='shape'?((o.shapeKind||'shape')+' shape'):o.type==='qc-card'?('QC · '+(o.label||'checkpoint')):o.type==='plot'?('Plot · '+(o.plot?.type||'bar')):o.type==='path'?'Bézier path':o.type==='symbol'?('Icon · '+(o.name||'compound')):(o.startHead==='none'&&o.endHead==='none'?'Line':'Arrow connector'));return `<div class="layer ${selectedIds.has(o.id)?'active':''}" data-layer="${o.id}"><span class="layericon">${ico(o.type==='text'?'type':o.type==='arrow'?'arrow':o.type==='rect'?'square':'layers',14)}</span><span class="layername">${svgEsc(label)}${o.groupId?' · grouped'+(o.groupStack?.length?' · nested':''):''}</span></div>`}).join('');el.querySelectorAll('[data-layer]').forEach(b=>{b.ondblclick=()=>{const o=objects.find(x=>x.id===b.dataset.layer);if(o?.type==='symbol')openIconWorkspace(o.id)};b.onclick=e=>{if(e.shiftKey||e.ctrlKey||e.metaKey){toggleSelected(b.dataset.layer);render()}else if(objects.find(o=>o.id===b.dataset.layer)?.type==='path'){selectIndividual(b.dataset.layer);render()}else setSelected(b.dataset.layer)}})}
-function categoryMatch(a,c){if(c==='All')return true;if(c==='My icons')return !!a.uploaded&&!a.builtin;if(c.startsWith('pack:')){const [pack,sub='']=c.slice(5).split('|');if(a.packId!==pack)return false;if(!sub)return true;if(sub.startsWith('style:'))return a.variant===sub.slice(6);if(sub.startsWith('category:'))return (a.originalCategory||'Other')===decodeURIComponent(sub.slice(9));return false}return a.category===c;}
+function categoryMatch(a,c){if(c==='All')return true;if(c==='My icons')return !!a.uploaded&&!a.builtin;if(c.startsWith('mol-v2:'))return a.category==='Molecular Biology Essentials'&&a.originalCategory===decodeURIComponent(c.slice(7));if(c.startsWith('pack:')){const [pack,sub='']=c.slice(5).split('|');if(a.packId!==pack)return false;if(!sub)return true;if(sub.startsWith('style:'))return a.variant===sub.slice(6);if(sub.startsWith('category:'))return (a.originalCategory||'Other')===decodeURIComponent(sub.slice(9));return false}return a.category===c;}
 // Shift-click library icons to build a portable batch; keep IDs stable across category pages.
 const selectedLibraryAssets=new Set();
 function clearAssetBatch(){selectedLibraryAssets.clear();renderAssets()}
@@ -2009,11 +2020,12 @@ function renderPackCollections(){
  el.querySelectorAll('[data-pack-main]').forEach(b=>b.onclick=()=>setIconCategory('pack:'+b.dataset.packMain));
  el.querySelectorAll('[data-pack-filter]').forEach(b=>b.onclick=()=>setIconCategory(b.dataset.packFilter));
 }
-function renderCategories(){const categories=['All','My icons','Human Embryogenesis','Carnegie stages'];
- const detailedCategories=[];
+function renderCategories(){const categories=['All','My icons','Human Embryogenesis','Carnegie stages','Human Organoids','Molecular Biology Essentials'];
+ const detailedCategories=[...new Set(assets.filter(a=>a.builtin&&!categories.includes(a.category)).map(a=>a.category))].sort();
  let opt='<optgroup label="Main library">'+categories.map(c=>`<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')+'</optgroup>';
  opt+='<optgroup label="Detailed categories">'+detailedCategories.map(c=>`<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')+'</optgroup>';
 
+ opt+='<optgroup label="Molecular Biology Essentials V7.1 · 329 icons">'+SCIFI_MOLECULAR_SUBCATEGORIES.map(c=>{const val='mol-v2:'+encodeURIComponent(c);return `<option value="${val}" ${category===val?'selected':''}>${svgEsc(c)}</option>`}).join('')+'</optgroup>';
  for(const p of packRecords){const a=customAssets.filter(a=>a.packId===p.id);if(!a.length)continue;
   opt+=`<optgroup label="${svgEsc(p.name)}"><option value="pack:${p.id}" ${category==='pack:'+p.id?'selected':''}>All · ${svgEsc(p.name)} (${a.length})</option>`;
   for(const variant of ['outline','filled'])if(a.some(x=>x.variant===variant)){const val=`pack:${p.id}|style:${variant}`;opt+=`<option value="${val}" ${category===val?'selected':''}>${variant[0].toUpperCase()+variant.slice(1)}</option>`}
@@ -2212,7 +2224,7 @@ async function importIconPackFile(file){if(!file)return;if(file.size>MAX_PACK_BY
  $('#packImportApply').onclick=async()=>{const btn=$('#packImportApply');btn.disabled=true;const name=$('#importCollectionName').value,mode=$('#packConflict').value;try{const n=await applyIconPack(pack,mode,name,(done,total)=>{let el=$('#packProgress');if(el)el.textContent=`Processing ${done} / ${total} icons…`});closeModal();showToast(`Imported ${n} icons into ${cleanCollectionName(name)} · save project to retain`)}catch(err){console.error(err);if(btn)btn.disabled=false;showToast('Import failed: '+err.message)}};
 }
 
-function showLicense(){modal(`<h2>SCiFi Studio · v22.0 public preview</h2><p><strong>Project creator, scientific direction and lead development:</strong> Jochen Dobner (AI-assisted development).</p><p>Copyright &copy; 2026 IUF - Leibniz-Institut für umweltmedizinische Forschung GmbH.</p><p>Software: MIT. The 57 included developmental illustrations: CC0 1.0. User-imported artwork retains its own rights. Interface glyphs: Lucide ISC and Feather MIT; notices are included in the HTML.</p><p>Scientific illustrations are schematic, not diagnostic. <a href="https://github.com/j-dobner/SCiFi-Studio" target="_blank" rel="noopener noreferrer">Project and license documentation</a>.</p>`)}
+function showLicense(){modal(`<h2>SCiFi Studio · v22.1 public preview</h2><p><strong>Project creator, scientific direction and lead development:</strong> Jochen Dobner (AI-assisted development).</p><p>Copyright &copy; 2026 IUF - Leibniz-Institut für umweltmedizinische Forschung GmbH.</p><p>Software: MIT. The 471 included original scientific illustrations: CC0 1.0. User-imported artwork retains its own rights. Interface glyphs: Lucide ISC and Feather MIT; notices are included in the HTML.</p><p>Scientific illustrations are schematic, not diagnostic. <a href="https://github.com/j-dobner/SCiFi-Studio" target="_blank" rel="noopener noreferrer">Project and license documentation</a>.</p>`)}
 $('#uploadIconBtn').onclick=()=>$('#uploadIconFile').click();
 $('#iconPackBtn').onclick=openIconPackHub;$('#importIconPackFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(f)await importIconPackFile(f);e.target.value=''});
 $('#uploadIconFile').addEventListener('change',async e=>{await importIconFiles(e.target.files);e.target.value=''});
