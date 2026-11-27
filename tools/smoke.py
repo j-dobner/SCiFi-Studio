@@ -434,6 +434,57 @@ with sync_playwright() as p:
             const inter=nxBoolCombine('intersect',[a,rect(10,10,80,80,'#abcdef',0),rect(20,20,20,20,'#abcdef',0)]);
             if(!nxInside({x:30,y:30},nxBoolNativeContours(inter,false).loops))throw Error('Intersection missing');
         }""")
+        # v23.5: typography uses actual base/run font sizes and nested page scaling.
+        page.evaluate("""() => {
+            const a=txt('H2O',10,20,20,'#123456',700);
+            a.fontFamily='Georgia,serif';a.richRuns=[{start:1,end:2,style:{script:'sub',fontSize:12,color:'#abcdef',italic:true}}];
+            const b=txt('Fixed box',100,20,20,'#345678',400);
+            b.fontFamily='Arial,Helvetica,sans-serif';b.textBoxMode='fixed';b.w=200;b.h=100;b.textBoxPadding=5;
+            const c=txt('Nested',5,5,40,'#123456',500);c.fontFamily='Georgia,serif';
+            const sym={id:uid(),type:'symbol',name:'Typography test',x:10,y:160,w:100,h:50,sourceW:200,sourceH:100,children:[c],opacity:1,rotation:0};
+            const locked=txt('Protected',20,200,20,'#123456');locked.fontFamily='Georgia,serif';locked.locked=true;
+            objects=[a,b,sym,locked];selectOnly(null);render();window.typeOriginal=JSON.stringify(objects)
+        }""")
+        page.locator("#uiFigureTypographyBtn").click()
+        assert page.locator("[data-type-kind=size][data-type-source='15']").count() == 1
+        assert "3 style entries" in page.locator("[data-type-kind=size][data-type-source='15']").inner_text()
+        assert page.locator("[data-type-kind=size][data-type-source='9']").count() == 1
+        page.locator("[data-type-kind=font][data-type-source='Georgia,serif'] select").select_option("Arial,Helvetica,sans-serif")
+        page.locator("[data-type-kind=size][data-type-source='15'] input").fill("12")
+        page.wait_for_function("() => !document.querySelector('#uiTypeApply').disabled")
+        assert page.evaluate("JSON.stringify(objects)===window.typeOriginal")
+        page.locator("#uiTypeBefore").click()
+        page.locator("#uiTypeAfter").click()
+        page.locator("#uiTypeCancel").click()
+        assert page.evaluate("JSON.stringify(objects)===window.typeOriginal")
+        page.locator("#uiFigureTypographyBtn").click()
+        page.locator("[data-type-kind=font][data-type-source='Georgia,serif'] select").select_option("Arial,Helvetica,sans-serif")
+        page.locator("[data-type-kind=size][data-type-source='15'] input").fill("12")
+        page.wait_for_function("() => !document.querySelector('#uiTypeApply').disabled")
+        page.locator("#uiTypeApply").click()
+        assert page.evaluate("objects[0].fontSize") == 16
+        assert page.evaluate("objects[0].fontFamily") == "Arial,Helvetica,sans-serif"
+        assert page.evaluate("objects[0].fontWeight") == 700
+        assert page.evaluate("objects[0].richRuns[0].style.script") == "sub"
+        assert page.evaluate("objects[0].richRuns[0].style.fontSize") == 12
+        assert page.evaluate("objects[0].richRuns[0].style.color") == "#abcdef"
+        assert page.evaluate("[objects[1].w,objects[1].h]") == [200,100]
+        assert page.evaluate("objects[2].children[0].fontSize") == 32
+        assert page.evaluate("objects[3].fontFamily") == "Georgia,serif"
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.typeOriginal")
+        # A size outside the native limits must not partially apply.
+        assert page.evaluate("""() => {try{uiTypePlan('page',{font:new Map(),size:new Map([['15',1000]])});return false}catch{return JSON.stringify(objects)===window.typeOriginal}}""")
+        # Cross-page changes are independently undoable.
+        page.evaluate("""() => {
+            appendPage(false);objects=[txt('Other page',10,10,20)];render();
+            uiTypeCommit(uiTypePlan('all',{font:new Map(),size:new Map([['15',12]])}))
+        }""")
+        assert page.evaluate("objects[0].fontSize") == 16
+        assert page.evaluate("pages[0].elements[0].fontSize") == 16
+        page.evaluate("activatePage(pages[0].id);undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.typeOriginal")
+        page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {

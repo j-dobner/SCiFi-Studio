@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.4 — Combine shapes review</title>
+<title>SCiFi Studio v23.5 — Figure typography review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.4 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.5 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -4116,6 +4116,163 @@ uiReviewPaths.figureColors='<circle cx="7" cy="7" r="4"/><circle cx="17" cy="7" 
 const uiFigureColorButton=nxButton('uiFigureColorsBtn','Figure colors',uiFigureColorDialog,$('#groupBtn').parentElement);
 uiFigureColorButton.classList.add('ui-review-icon');uiReviewToolLabel(uiFigureColorButton,'figureColors','Figure colors');uiFigureColorButton.title='Inspect and selectively replace colors across editable figure artwork';
 const uiFigureColorCss=document.createElement('style');uiFigureColorCss.textContent='.ui-fig-color-preview{height:200px;background:repeating-conic-gradient(#e9eff3 0% 25%,#fff 0% 50%) 0 0/16px 16px;border:1px solid #d6e1ea;border-radius:6px;overflow:hidden;margin:10px 0}.ui-fig-color-preview svg{width:100%;height:100%;display:block;pointer-events:none}.ui-fig-color-rows{max-height:300px;overflow:auto;border:1px solid #d6e1ea;border-radius:6px;padding:4px 8px;margin:6px 0 10px}.ui-fig-color-row{display:grid;grid-template-columns:16px 24px minmax(0,1fr) 12px auto;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #e8eef3}.ui-fig-color-row:last-child{border-bottom:0}.ui-fig-color-original{width:23px;height:23px;border:1px solid #acbdca;border-radius:4px}.ui-fig-color-row strong,.ui-fig-color-row small{display:block;font-size:11px;overflow-wrap:anywhere}.ui-fig-color-row small{color:#607b8b;font-size:10px}.ui-fig-color-dest{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:3px;max-width:130px}.ui-fig-color-dest input[type=color]{width:32px;height:26px;padding:1px;border:1px solid #cadbe5;border-radius:4px}.ui-fig-color-code{font-size:10px;color:#526b80;font-family:monospace}';document.head.append(uiFigureColorCss);
+
+/* Incremental v23.5: selective font-family and nominal physical-size replacements. */
+const uiTypeSizeKey=(size,scale)=>String(Number((size*scale*72/96).toPrecision(8)));
+const uiTypeFontName=id=>fontFamilies.find(v=>v[0]===id)?.[1]||fontFamilies[0][1];
+function uiTypeVisit(items,visit,allowed=null,scale=1,depth=0){
+ if(!Array.isArray(items)||depth>8||!Number.isFinite(scale)||scale<=0)return;
+ for(const o of items.slice(0,depth?2000:5000)){
+  if(!o||o.hidden||o.locked||o.opacity===0||o.type==='reference'||(depth===0&&allowed&&!allowed.has(o.id)))continue;
+  if(o.type==='symbol'){uiTypeVisit(o.children,visit,null,scale*Math.max(1,o.h)/Math.max(1,+o.sourceH||100),depth+1);continue}
+  if(o.type==='text'&&String(o.text||'').trim()){
+   const base=richStyle(o),rich=richActive(o),runs=rich?richCompress(richChars(o)):[];
+   let changed=false,runChanged=false;
+   const slot=(kind,value,owner,key,isRun=false)=>{
+    visit({kind,value,scale,object:o,set:v=>{owner[key]=v;changed=true;if(isRun)runChanged=true}})
+   };
+   // Base styles also affect line layout when every glyph has an override.
+   slot('font',base.fontFamily,o,'fontFamily');slot('size',uiTypeSizeKey(base.fontSize,scale),o,'fontSize');
+   for(const run of runs){
+    if(Object.hasOwn(run.style,'fontFamily'))slot('font',run.style.fontFamily,run.style,'fontFamily',true);
+    if(Object.hasOwn(run.style,'fontSize'))slot('size',uiTypeSizeKey(run.style.fontSize,scale),run.style,'fontSize',true)
+   }
+   if(runChanged)o.richRuns=runs;
+   if(changed)scifiUpdateTextGeometry(o);
+  }else if(['shape','rect'].includes(o.type)&&String(o.shapeLabel||'').trim()){
+   // Embedded shape labels have geometry-dependent sizes; only their family is editable here.
+   visit({kind:'font',value:validFontFamily(o.fontFamily),scale,object:o,set:v=>{o.fontFamily=v}})
+  }
+ }
+}
+function uiTypeInventory(scope){
+ const rows={font:new Map(),size:new Map()};
+ for(const p of uiFigureColorPages(scope))uiTypeVisit(p.items,s=>{
+  const group=rows[s.kind];let row=group.get(s.value);
+  if(!row){row={value:s.value,count:0};group.set(s.value,row)}
+  row.count++
+ },p.allowed);
+ return {font:[...rows.font.values()].sort((a,b)=>uiTypeFontName(a.value).localeCompare(uiTypeFontName(b.value))),size:[...rows.size.values()].sort((a,b)=>Number(a.value)-Number(b.value))}
+}
+function uiTypeReplace(page,mapping){
+ const changed=new Set();let slots=0;const warnings=[];
+ uiTypeVisit(page.items,s=>{
+  const value=mapping[s.kind]?.get(s.value);if(value===undefined||String(value)===s.value)return;
+  if(s.kind==='font'){
+   if(!fontFamilies.some(v=>v[0]===value))throw Error('Choose a supported font family.');
+   s.set(value)
+  }else{
+   const target=Number(value),local=target*96/72/s.scale;
+   if(!Number.isFinite(local)||local<6-1e-8||local>160+1e-8)throw Error('A '+s.value+' pt entry on '+page.name+' cannot reach '+target+' pt at its current illustration scale. Native text supports 6–160 design pixels.');
+   s.set(Math.max(6,Math.min(160,local)))
+  }
+  slots++;changed.add(s.object)
+ },page.allowed);
+ for(const o of changed){
+  if(o.type!=='text'||o.textBoxMode!=='fixed')continue;
+  const pad=Math.max(0,Math.min(80,Number(o.textBoxPadding)||0)),innerW=Math.max(0,o.w-2*pad),innerH=Math.max(0,o.h-2*pad);
+  let tooBig=false;
+  if(richActive(o)){const l=richLayout(o);tooBig=l.width>innerW+.5||l.height>innerH+.5}
+  else{
+   const lines=scifiTextBoxLines(o),fs=o.fontSize||20,ctx=scifiTextMeasureCtx||(scifiTextMeasureCtx=document.createElement('canvas').getContext('2d'));
+   if(ctx)ctx.font=(o.italic?'italic ':'')+(o.fontWeight||500)+' '+fs+'px '+validFontFamily(o.fontFamily);
+   tooBig=lines.some(v=>(ctx?ctx.measureText(v).width:v.length*fs*.55)>innerW+.5)||fs+(Math.max(1,lines.length)-1)*fs*(o.textLineHeight||1.28)>innerH+.5
+  }
+  if(tooBig)warnings.push(String(o.text).slice(0,60))
+ }
+ return {slots,objects:changed.size,warnings}
+}
+function uiTypePlan(scope,mapping){
+ if(!['selection','page','all'].includes(scope))throw Error('Invalid scope.');
+ if(scope==='selection'&&!selectedIds.size)throw Error('Select text or an editable illustration first.');
+ if(iconWorkspace&&scope==='all')throw Error('Finish icon editing before editing all pages.');
+ const plans=[];
+ for(const p of uiFigureColorPages(scope)){
+  const next={...p,items:structuredClone(p.items)},result=uiTypeReplace(next,mapping);
+  if(result.slots)plans.push({p,next,result})
+ }
+ return plans
+}
+function uiTypeCommit(plans){
+ for(const {p,next} of plans){
+  if(p.id===activePageId)transact(()=>{objects=next.items});
+  else{
+   const dest=pages.find(v=>v.id===p.id);if(!dest)continue;
+   const before=JSON.stringify({elements:dest.elements,background:dest.background,selection:[]});
+   dest.elements=next.items;dest.undos=[...(dest.undos||[]),before].slice(-70);let size=dest.undos.reduce((sum,v)=>sum+v.length,0);
+   while(dest.undos.length>1&&size>24*1024*1024)size-=dest.undos.shift().length;dest.redos=[];
+  }
+ }
+ storeCurrentPage();render()
+}
+function uiTypeDialog(){
+ if(uiPainterMode)uiPainterStop();closeTextEditor(true);
+ modal('<h2>Figure typography</h2><p>Replace existing font families or sizes selectively. Changes are previewed on a copy of the page. Font sizes are nominal vertical points on the page (96 design pixels per inch), including scaling inside native illustrations. Subscripts and superscripts retain their relative size.</p><div class="nx-grid"><label class="nx-field">Scope<select id="uiTypeScope"><option value="selection">Selected objects</option><option value="page">Current page</option><option value="all">All pages</option></select></label><label class="nx-field">Preview page<select id="uiTypePage"></select></label></div><div class="ui-fig-color-preview"><svg id="uiTypePreview" xmlns="http://www.w3.org/2000/svg" aria-label="Typography preview"></svg></div><div class="actiongrid"><button class="btn small" id="uiTypeBefore">Before</button><button class="btn small active" id="uiTypeAfter">After</button><button class="btn small" id="uiTypeReset">Reset replacements</button></div><h3>Font families</h3><div id="uiTypeFamilies" class="ui-type-rows"></div><h3>Nominal font sizes (pt)</h3><div id="uiTypeSizes" class="ui-type-rows"></div><p id="uiTypeSummary" role="status"></p><p id="uiTypeWarning" class="hint" role="status"></p><div class="actiongrid"><button class="btn primary" id="uiTypeApply">Apply typography</button><button class="btn" id="uiTypeCancel">Cancel</button></div><p class="hint">Counts include base text styles and explicit rich-text overrides. Bold, italic, underline, color, tracking and scientific script formatting are preserved. Auto-size labels can reflow; fixed text-box frames and illustration frames stay the same. Embedded shape labels support family changes only. Imported artwork, plots and locked/hidden objects are excluded. Font availability depends on your system. All-page undo is separate per page.</p>');
+ const scope=$('#uiTypeScope'),pageSelect=$('#uiTypePage'),mapping={font:new Map(),size:new Map()},invalid=new Set();
+ const root=$('#uiTypePreview');let after=true,frame=0,rows=null;
+ scope.value=selectedIds.size?'selection':'page';scope.querySelector('[value=selection]').disabled=!selectedIds.size;scope.querySelector('[value=all]').disabled=!!iconWorkspace;
+ function preview(){
+  if(!root.isConnected||$('#modalOverlay').classList.contains('hidden'))return;
+  const source=uiFigureColorPages(scope.value).find(p=>p.id===pageSelect.value);
+  let plans=[],problem='';
+  try{if(invalid.size)throw Error('Enter positive numeric font sizes.');plans=uiTypePlan(scope.value,mapping)}catch(e){problem=e.message}
+  const slots=plans.reduce((sum,p)=>sum+p.result.slots,0),warnings=plans.flatMap(p=>p.result.warnings);
+  $('#uiTypeSummary').textContent=slots+' style entries affected on '+plans.length+' page(s)';
+  $('#uiTypeWarning').textContent=problem|| (warnings.length?'Potential fixed-box overflow: '+warnings.length+' label(s), including '+warnings.slice(0,3).join('; ')+'. Inspect the preview.':'');
+  $('#uiTypeApply').disabled=!!problem||!slots;
+  if(source)uiFigureColorPreview(root,after&&!problem?(plans.find(p=>p.p.id===source.id)?.next||source):source,new Map(),new Set(),false)
+ }
+ function schedule(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;preview()})}
+ function renderRows(){
+  const familyRoot=$('#uiTypeFamilies'),sizeRoot=$('#uiTypeSizes');familyRoot.replaceChildren();sizeRoot.replaceChildren();
+  for(const kind of ['font','size']){
+   const list=kind==='font'?familyRoot:sizeRoot;
+   if(!rows[kind].length){list.textContent='No editable '+(kind==='font'?'font families':'text sizes')+' in this scope.';continue}
+   for(const entry of rows[kind].slice(0,300)){
+    const row=document.createElement('div');row.className='ui-type-row';row.dataset.typeKind=kind;row.dataset.typeSource=entry.value;
+    const label=document.createElement('div'),name=document.createElement('strong'),meta=document.createElement('small');
+    name.textContent=kind==='font'?uiTypeFontName(entry.value):Number(entry.value).toLocaleString(undefined,{maximumSignificantDigits:6})+' pt';meta.textContent=entry.count+' style '+(entry.count===1?'entry':'entries');label.append(name,meta);
+    const arrow=document.createElement('span');arrow.textContent='→';arrow.setAttribute('aria-hidden','true');
+    const field=document.createElement(kind==='font'?'select':'input');field.setAttribute('aria-label','Replacement for '+name.textContent);
+    if(kind==='font'){
+     for(const [id,title] of fontFamilies){const option=document.createElement('option');option.value=id;option.textContent=title;field.append(option)}
+    }else{field.type='number';field.min='0.00000001';field.step='any';field.inputMode='decimal'}
+    field.value=mapping[kind].get(entry.value)??entry.value;
+    field.addEventListener(kind==='font'?'change':'input',()=>{
+     const key=kind+':'+entry.value,value=kind==='font'?field.value:field.valueAsNumber;
+     if(kind==='size'&&(!Number.isFinite(value)||value<=0)){invalid.add(key);field.setAttribute('aria-invalid','true')}
+     else{invalid.delete(key);field.removeAttribute('aria-invalid');if(String(value)===entry.value)mapping[kind].delete(entry.value);else mapping[kind].set(entry.value,value)}
+     schedule()
+    });
+    row.append(label,arrow,field);list.append(row)
+   }
+   if(rows[kind].length>300){const note=document.createElement('p');note.textContent='Only the first 300 distinct entries are shown. Narrow the scope to edit other entries.';list.append(note)}
+  }
+ }
+ function refresh(){
+  mapping.font.clear();mapping.size.clear();invalid.clear();rows=uiTypeInventory(scope.value);
+  const old=pageSelect.value,candidates=uiFigureColorPages(scope.value);pageSelect.replaceChildren();
+  for(const p of candidates){const option=document.createElement('option');option.value=p.id;option.textContent=p.name;pageSelect.append(option)}
+  pageSelect.value=candidates.some(p=>p.id===old)?old:activePageId;renderRows();preview()
+ }
+ scope.onchange=refresh;pageSelect.onchange=preview;
+ const compare=value=>{after=value;$('#uiTypeBefore').classList.toggle('active',!after);$('#uiTypeAfter').classList.toggle('active',after);preview()};
+ $('#uiTypeBefore').onclick=()=>compare(false);$('#uiTypeAfter').onclick=()=>compare(true);
+ $('#uiTypeReset').onclick=()=>{mapping.font.clear();mapping.size.clear();invalid.clear();renderRows();preview()};
+ $('#uiTypeCancel').onclick=closeModal;
+ $('#uiTypeApply').onclick=()=>{try{
+  if(invalid.size)throw Error('Enter valid replacement sizes.');
+  const plans=uiTypePlan(scope.value,mapping);if(!plans.length)return;
+  const warnings=plans.reduce((sum,p)=>sum+p.result.warnings.length,0);
+  if((scope.value==='all'||warnings)&&!confirm('Apply typography to '+plans.length+' page(s)?'+(warnings?' '+warnings+' fixed text box(es) may overflow.':'')+(scope.value==='all'?' Undo is separate on each page.':'')))return;
+  uiTypeCommit(plans);closeModal();showToast(plans.reduce((sum,p)=>sum+p.result.slots,0)+' typography entries updated')
+ }catch(e){showToast(e.message)}};
+ refresh()
+}
+uiReviewPaths.figureType='<path d="M3 5h12M9 5v15M5 20h8M15 10h6M18 10v10M16 20h4"/>';
+const uiTypeButton=nxButton('uiFigureTypographyBtn','Typography',uiTypeDialog,$('#uiFigureColorsBtn').parentElement);
+uiTypeButton.classList.add('ui-review-icon');uiReviewToolLabel(uiTypeButton,'figureType','Typography');uiTypeButton.title='Inspect and selectively replace existing fonts and nominal text sizes';
+const uiTypeCss=document.createElement('style');uiTypeCss.textContent='.ui-type-rows{max-height:210px;overflow:auto;border:1px solid #d6e1ea;border-radius:6px;padding:4px 8px;margin:6px 0 10px}.ui-type-row{display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(100px,1fr);align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e8eef3}.ui-type-row:last-child{border-bottom:0}.ui-type-row strong,.ui-type-row small{display:block;font-size:11px;overflow-wrap:anywhere}.ui-type-row small{color:#607b8b;font-size:10px}.ui-type-row input,.ui-type-row select{min-width:0;width:100%;font-size:12px}.ui-type-row [aria-invalid=true]{border-color:#b54848}';document.head.append(uiTypeCss);
 
 nxFitAvailable();
 </script>
