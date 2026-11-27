@@ -251,6 +251,62 @@ with sync_playwright() as p:
             if kind==b"pHYs": chunks.append(struct.unpack(">IIB",data))
             pos+=12+n
         assert chunks==[(11811,11811,1)]
+        # v23.9: actual offline downloads, format structure and physical metadata.
+        page.evaluate("showExport()")
+        page.locator("#exportDpi").select_option("custom")
+        page.locator("#customDpi").fill("0")
+        for button in ("pngExport","tiffExport","jpegExport","rasterPdfExport"):
+            assert page.locator("#"+button).is_disabled()
+        assert page.locator("#svgExport").is_enabled()
+        page.locator("#customDpi").fill("300")
+        with page.expect_download() as exported:
+            page.locator("#tiffExport").click()
+        assert exported.value.suggested_filename.endswith("_300dpi.tiff")
+        raw=Path(exported.value.path()).read_bytes()
+        assert raw[:4]==b"II*\x00"
+        ifd=struct.unpack_from("<I",raw,4)[0]
+        n=struct.unpack_from("<H",raw,ifd)[0]
+        tags={tag:(typ,count,val) for tag,typ,count,val in (struct.unpack_from("<HHII",raw,ifd+2+i*12) for i in range(n))}
+        assert tags[256][2]==tags[257][2]==300
+        assert tags[259][2]==1 and tags[262][2]==2 and tags[277][2]==3
+        assert tags[296][2]==2 and tags[279][2]==300*300*3
+        assert struct.unpack_from("<HHH",raw,tags[258][2])==(8,8,8)
+        for tag in (282,283):
+            assert struct.unpack_from("<II",raw,tags[tag][2])==(300,1)
+        assert len(raw)==tags[273][2]+tags[279][2]
+        with page.expect_download() as exported:
+            page.evaluate("uiExtendedExport('jpeg',300)")
+        assert exported.value.suggested_filename.endswith("_300dpi.jpg")
+        raw=Path(exported.value.path()).read_bytes()
+        assert raw[:2]==b"\xff\xd8" and raw[-2:]==b"\xff\xd9"
+        jfif=raw.index(b"JFIF\x00")
+        assert struct.unpack_from(">BHH",raw,jfif+7)==(1,300,300)
+        with page.expect_download() as exported:
+            page.evaluate("uiExtendedExport('pdf',300)")
+        assert exported.value.suggested_filename.endswith("_300dpi.pdf")
+        raw=Path(exported.value.path()).read_bytes()
+        assert raw.startswith(b"%PDF-1.4") and raw.endswith(b"%%EOF\n")
+        assert b"/MediaBox [0 0 72 72]" in raw
+        assert b"/Width 300 /Height 300 /ColorSpace /DeviceRGB" in raw
+        import re
+        xref=int(re.search(rb"startxref\n(\d+)\n%%EOF",raw).group(1))
+        assert raw[xref:xref+4]==b"xref"
+        for i,line in enumerate(raw[xref:].splitlines()[3:8],1):
+            offset=int(line[:10])
+            assert raw[offset:].startswith(f"{i} 0 obj".encode())
+        match=re.search(rb"/Filter /FlateDecode /Length (\d+) >>\nstream\n",raw)
+        assert match and len(zlib.decompress(raw[match.end():match.end()+int(match.group(1))]))==300*300*3
+        assert page.evaluate("!uiExtendedExportBusy")
+        # A transparent, empty scene must flatten to white in new RGB outputs.
+        assert page.evaluate("""async () => {
+            const c=document.createElement('canvas');c.width=2;c.height=1;
+            const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='#ffffff';ctx.fillRect(0,0,2,1);
+            ctx.fillStyle='#ff0000';ctx.fillRect(1,0,1,1);
+            const rgb=uiExportRGB(c);
+            const blob=uiExportTiff({width:2,height:1,dpi:600},rgb);
+            const b=new Uint8Array(await blob.arrayBuffer());
+            return Array.from(b.slice(-6)).join(',')==='255,255,255,255,0,0';
+        }""")
         # UI review 7: workspace persistence and reset without changing project data.
         assert page.evaluate("uiWorkspaceStorageAvailable()")
         page.evaluate("uiResizeSet('left',340);uiWorkspaceSave()")

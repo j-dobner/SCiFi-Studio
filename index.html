@@ -2091,6 +2091,103 @@ async function exportPNG(dpi=300){
  const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG encoding failed');const output=await pngWithDpi(blob,dpi);saveBlob(output,projectFileName(projectName).replace(/\.json$/i,'')+'_'+dpi+'dpi.png','image/png');showToast('PNG exported · '+dpi+' DPI');
  }catch(e){console.error(e);showToast('PNG export failed: '+(e.message||'try SVG'))}finally{if(url)URL.revokeObjectURL(url)}
 }
+// v23.9 — dependency-free current-page RGB publication exports.
+function uiExportRGB(canvas){
+ const rgba=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+ const rgb=new Uint8Array(canvas.width*canvas.height*3);
+ for(let i=0,j=0;i<rgba.length;i+=4,j+=3){rgb[j]=rgba[i];rgb[j+1]=rgba[i+1];rgb[j+2]=rgba[i+2]}
+ return rgb;
+}
+function uiExportTiff(size,rgb){
+ // Baseline little-endian TIFF, interleaved RGB, one uncompressed strip.
+ const {width,height,dpi}=size;
+ if(rgb.length!==width*height*3)throw Error('Invalid TIFF pixel data');
+ const count=13,ifd=8,bits=ifd+2+count*12+4,xres=bits+6,yres=xres+8,pixels=yres+8;
+ const header=new Uint8Array(pixels),v=new DataView(header.buffer);
+ header.set([73,73,42,0]);v.setUint32(4,ifd,true);v.setUint16(ifd,count,true);
+ let pos=ifd+2;
+ function tag(id,type,n,value){v.setUint16(pos,id,true);v.setUint16(pos+2,type,true);v.setUint32(pos+4,n,true);if(type===3&&n===1)v.setUint16(pos+8,value,true);else v.setUint32(pos+8,value,true);pos+=12}
+ tag(256,4,1,width);tag(257,4,1,height);tag(258,3,3,bits);
+ tag(259,3,1,1);tag(262,3,1,2);tag(273,4,1,pixels);
+ tag(277,3,1,3);tag(278,4,1,height);tag(279,4,1,rgb.length);
+ tag(282,5,1,xres);tag(283,5,1,yres);tag(284,3,1,1);tag(296,3,1,2);
+ for(let i=0;i<3;i++)v.setUint16(bits+i*2,8,true);
+ for(const offset of [xres,yres]){v.setUint32(offset,dpi,true);v.setUint32(offset+4,1,true)}
+ return new Blob([header,rgb],{type:'image/tiff'});
+}
+async function uiExportJpegDpi(blob,dpi){
+ const bytes=new Uint8Array(await blob.arrayBuffer());
+ if(bytes.length<4||bytes[0]!==255||bytes[1]!==216)throw Error('Invalid JPEG');
+ // Replace existing JFIF density or add a baseline JFIF APP0 header after SOI.
+ const v=new DataView(bytes.buffer);
+ for(let pos=2;pos+4<=bytes.length;){
+  if(bytes[pos]!==255)break;
+  const marker=bytes[pos+1];if(marker===218||marker===217)break;
+  if(marker===255){pos++;continue}
+  if(marker===1||(marker>=208&&marker<=215)){pos+=2;continue}
+  const n=v.getUint16(pos+2);if(n<2||pos+2+n>bytes.length)throw Error('Invalid JPEG segment');
+  if(marker===224&&n>=16&&bytes[pos+4]===74&&bytes[pos+5]===70&&bytes[pos+6]===73&&bytes[pos+7]===70&&bytes[pos+8]===0){
+   bytes[pos+11]=1;v.setUint16(pos+12,dpi);v.setUint16(pos+14,dpi);return new Blob([bytes],{type:'image/jpeg'});
+  }
+  pos+=2+n;
+ }
+ const app=new Uint8Array([255,224,0,16,74,70,73,70,0,1,1,1,dpi>>8,dpi&255,dpi>>8,dpi&255,0,0]);
+ return new Blob([bytes.subarray(0,2),app,bytes.subarray(2)],{type:'image/jpeg'});
+}
+async function uiExportRasterPdf(size,rgb,designWidth,designHeight){
+ // PDF 1.4 with a single lossless RGB image and exact physical MediaBox.
+ // No claim of vector or text editability; SVG remains the vector export.
+ const {width,height}=size;
+ if(rgb.length!==width*height*3)throw Error('Invalid PDF pixel data');
+ let image=new Blob([rgb]),filter='';
+ if(typeof CompressionStream==='function'){
+  image=await new Response(image.stream().pipeThrough(new CompressionStream('deflate'))).blob();
+  filter=' /Filter /FlateDecode';
+ }
+ const pw=String(+(designWidth*72/SCIFI_PPI).toFixed(6)),ph=String(+(designHeight*72/SCIFI_PPI).toFixed(6));
+ const encoder=new TextEncoder(),parts=[],offsets=[0];let length=0;
+ function add(value){const part=typeof value==='string'?encoder.encode(value):value;parts.push(part);length+=part instanceof Blob?part.size:part.byteLength}
+ function object(id,body,stream){offsets[id]=length;add(id+' 0 obj\n'+body);if(stream!==undefined){add('\nstream\n');add(stream);add('\nendstream')}add('\nendobj\n')}
+ add('%PDF-1.4\n');add(new Uint8Array([37,226,227,207,211,10]));
+ object(1,'<< /Type /Catalog /Pages 2 0 R >>');
+ object(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+ object(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+pw+' '+ph+'] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+ object(4,'<< /Type /XObject /Subtype /Image /Width '+width+' /Height '+height+' /ColorSpace /DeviceRGB /BitsPerComponent 8'+filter+' /Length '+image.size+' >>',image);
+ const drawing=encoder.encode('q\n'+pw+' 0 0 '+ph+' 0 0 cm\n/Im0 Do\nQ\n');
+ object(5,'<< /Length '+drawing.length+' >>',drawing);
+ const xref=length;add('xref\n0 6\n0000000000 65535 f \n');
+ for(let i=1;i<=5;i++)add(String(offsets[i]).padStart(10,'0')+' 00000 n \n');
+ add('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n');
+ return new Blob(parts,{type:'application/pdf'});
+}
+let uiExtendedExportBusy=false;
+async function uiExtendedExport(format,dpi=300){
+ if(uiExtendedExportBusy){showToast('An export is already running');return}
+ if(!['tiff','jpeg','pdf'].includes(format))throw Error('Unknown export format');
+ uiExtendedExportBusy=true;let url,canvas;
+ try{
+  const size=pngExportSize(dpi),w=canvasWidth,h=canvasHeight;
+  const filename=projectFileName(projectName).replace(/\.json$/i,'')+'_'+dpi+'dpi.'+({tiff:'tiff',jpeg:'jpg',pdf:'pdf'}[format]);
+  const doc='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'">'+svgDocument(true,structuredClone(objects),pageBackground)+'</svg>';
+  url=URL.createObjectURL(new Blob([doc],{type:'image/svg+xml;charset=utf-8'}));
+  const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Could not render artwork'));img.src=url});
+  canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;
+  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('Canvas allocation failed');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size.width,size.height);ctx.drawImage(img,0,0,size.width,size.height);
+  let output;
+  if(format==='jpeg'){
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.95));
+   if(!blob||blob.type!=='image/jpeg')throw Error('JPEG encoding failed');
+   output=await uiExportJpegDpi(blob,dpi);
+  }else{
+   const rgb=uiExportRGB(canvas);canvas.width=1;canvas.height=1;
+   output=format==='tiff'?uiExportTiff(size,rgb):await uiExportRasterPdf(size,rgb,w,h);
+  }
+  saveBlob(output,filename,output.type);showToast(format.toUpperCase()+' exported · '+dpi+' DPI');
+ }catch(e){console.error(e);showToast('Export failed: '+(e.message||'try SVG'))}
+ finally{if(url)URL.revokeObjectURL(url);if(canvas){canvas.width=1;canvas.height=1}uiExtendedExportBusy=false}
+}
+
 function projectFileName(name){const base=String(name||'Untitled figure').trim().replace(/\.json$/i,'').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').replace(/[. ]+$/g,'').slice(0,120).trim()||'Untitled figure';return base+'.json'}
 async function saveProjectFile(data,onSaved){
  const suggestedName=projectFileName(data.name);
@@ -2242,11 +2339,11 @@ function canvasSizeDialog(){
  $('#applyCanvasSize').onclick=()=>{try{const size=read();pageUnit=size.unit;setCanvasSize(size.width,size.height);closeModal();nxFitAvailable();showToast('Canvas resized for all pages')}catch(err){showToast(err.message)}};
 }
 function showExport(){
- modal(`<h2>Export figures</h2><p>Vector or publication-resolution raster artwork.</p><div class="v23-export-card"><h3>PNG · raster image</h3><div class="fields2"><div class="field"><label for="exportDpi">Resolution (DPI)</label><select id="exportDpi"><option>96</option><option>150</option><option selected>300</option><option>600</option><option>1200</option><option value="custom">Custom</option></select></div><div class="field hidden" id="customDpiWrap"><label for="customDpi">Custom DPI</label><input id="customDpi" type="number" min="1" max="2400" value="300"></div></div><p id="exportPixelSummary" aria-live="polite"></p><button class="btn primary" id="pngExport">Export PNG</button></div><div class="v23-export-card"><h3>SVG · scalable vector</h3><p>Physical page size retained. DPI is not needed for vector elements.</p><div class="actiongrid"><button class="btn" id="svgExport">Current page</button><button class="btn" id="allSvgExport">All pages · stacked</button></div></div><div class="v23-export-card"><h3>Editable project</h3><button class="btn" id="jsonExport">Save project (.json)</button></div>`);
+ modal(`<h2>Export figures</h2><p>Vector or publication-resolution raster artwork.</p><div class="v23-export-card"><h3>Raster and raster PDF · current page</h3><div class="fields2"><div class="field"><label for="exportDpi">Resolution (DPI)</label><select id="exportDpi"><option>96</option><option>150</option><option selected>300</option><option>600</option><option>1200</option><option value="custom">Custom</option></select></div><div class="field hidden" id="customDpiWrap"><label for="customDpi">Custom DPI</label><input id="customDpi" type="number" min="1" max="2400" value="300"></div></div><p id="exportPixelSummary" aria-live="polite"></p><div class="actiongrid"><button class="btn primary" id="pngExport">PNG</button><button class="btn" id="tiffExport">TIFF · lossless</button><button class="btn" id="jpegExport">JPEG · high quality</button><button class="btn" id="rasterPdfExport">PDF · raster</button></div><p>TIFF is uncompressed RGB; JPEG is lossy (quality 95%). TIFF, JPEG and PDF flatten transparency onto white. PDF preserves physical page size but not editable vectors. Use SVG for vectors.</p></div><div class="v23-export-card"><h3>SVG · scalable vector</h3><p>Physical page size retained. DPI is not needed for vector elements.</p><div class="actiongrid"><button class="btn" id="svgExport">Current page</button><button class="btn" id="allSvgExport">All pages · stacked</button></div></div><div class="v23-export-card"><h3>Editable project</h3><button class="btn" id="jsonExport">Save project (.json)</button></div>`);
  const d=()=>+($('#exportDpi').value==='custom'?$('#customDpi').value:$('#exportDpi').value);
- const refresh=()=>{$('#customDpiWrap').classList.toggle('hidden',$('#exportDpi').value!=='custom');try{const s=pngExportSize(d());$('#exportPixelSummary').textContent=s.width+' × '+s.height+' px · '+formatPageUnit(canvasWidth,'cm')+' × '+formatPageUnit(canvasHeight,'cm')+' cm · '+s.dpi+' DPI';$('#pngExport').disabled=false}catch(e){$('#exportPixelSummary').textContent=e.message;$('#pngExport').disabled=true}};
+ const refresh=()=>{$('#customDpiWrap').classList.toggle('hidden',$('#exportDpi').value!=='custom');try{const s=pngExportSize(d());$('#exportPixelSummary').textContent=s.width+' × '+s.height+' px · '+formatPageUnit(canvasWidth,'cm')+' × '+formatPageUnit(canvasHeight,'cm')+' cm · '+s.dpi+' DPI';for(const id of ['pngExport','tiffExport','jpegExport','rasterPdfExport'])$('#'+id).disabled=false}catch(e){$('#exportPixelSummary').textContent=e.message;for(const id of ['pngExport','tiffExport','jpegExport','rasterPdfExport'])$('#'+id).disabled=true}};
  $('#exportDpi').onchange=refresh;$('#customDpi').oninput=refresh;refresh();
- $('#pngExport').onclick=()=>{const dpi=d();closeModal();exportPNG(dpi)};$('#svgExport').onclick=()=>{closeModal();exportSVG()};$('#allSvgExport').onclick=()=>{closeModal();exportAllPagesSVG()};$('#jsonExport').onclick=()=>{closeModal();saveProject()};
+ $('#pngExport').onclick=()=>{const dpi=d();closeModal();exportPNG(dpi)};for(const [id,format] of [['tiffExport','tiff'],['jpegExport','jpeg'],['rasterPdfExport','pdf']])$('#'+id).onclick=()=>{const dpi=d();closeModal();uiExtendedExport(format,dpi)};$('#svgExport').onclick=()=>{closeModal();exportSVG()};$('#allSvgExport').onclick=()=>{closeModal();exportAllPagesSVG()};$('#jsonExport').onclick=()=>{closeModal();saveProject()};
 }
 // SCiFi v10 — portable editable icon packs with named library collections.
 const ICON_PACK_KIND='scifi-icon-pack',ICON_PACK_VERSION=1;
@@ -3290,7 +3387,7 @@ const uiReviewTitles={
  undoBtn:'Undo the last change. Ctrl/Cmd+Z.',
  redoBtn:'Redo the last undone change. Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z.',
  saveBtn:'Save an editable project. Ctrl/Cmd+S.',
- exportBtn:'Export SVG, PNG with DPI settings, or an editable project.',
+ exportBtn:'Export SVG, PNG, TIFF, JPEG, raster PDF or an editable project.',
  nxFitCanvas:'Fit the entire page to the available canvas area.',
  nxFocusCanvas:'Collapse all workspace panels, or restore their previous state.'
 };
