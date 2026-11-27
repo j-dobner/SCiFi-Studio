@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v22.1 Preview — Stem Cell integrated Figure illustrator</title>
+<title>SCiFi Studio v23 development preview</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -290,20 +290,29 @@ No historical artwork collections are included in this preview.
 .pen-paint-field .pen-none{font:11px system-ui;display:flex;align-items:center;gap:3px;white-space:nowrap}
 @media(max-width:850px){.pen-paint-controls{grid-template-columns:1fr}}
 </style>
+<style>
+/* v23 interface experiment: compact, legible, canvas-first. */
+:root{--ink:#172a38;--muted:#526a79;--stroke:#dbe5e9;--blue:#226b82;--blue2:#e8f4f7;--bg:#edf2f4}
+.app .top{height:60px;padding:0 14px;gap:8px}.app .brand{min-width:0}.app .brandmark{background:#226b82;box-shadow:none;border-radius:8px;width:34px;height:34px}.app .brandsub{color:#536b79}.app .projectname{border:1px solid #dbe5e9;background:#f8fafb}
+.app .btn,.modal .btn{border-radius:6px;box-shadow:none}.app .btn.active,.app .library-tab.active{background:#e2f1f5;color:#164e62;border-color:#85b2c2}.app .btn.primary,.modal .btn.primary{background:#226b82;border-color:#226b82}.app .btn.primary:hover,.modal .btn.primary:hover{background:#164f62}
+.app .sidehead,.app .right .sidehead{padding:10px 14px 8px}.app .section{padding:13px 14px}.app .section-title{font-size:11px;letter-spacing:.045em;color:#3f596b;margin-bottom:10px}.app .eyebrow,.app .field label,.app .fieldlabel,.app .prop-sub{color:#506a79}.app .field{margin-bottom:10px}.app .field input,.app .field select{padding:7px 8px;border-color:#cad9df}.app .toolbar{padding:7px 10px;min-height:0;gap:6px}.app .toolgroup{gap:5px}.app .tool-label{display:none}.app .toolitem{padding:6px 8px}.app .canvas-shell{background-color:#e8eef1;background-image:radial-gradient(#cfdce2 .65px,transparent .65px)}.app .footerbar{color:#4d6574;height:32px}.app .asset-grid{gap:6px;padding:0 10px 12px}.app .asset{border-radius:7px;min-height:115px;background:white;border-color:#dbe5e9}.app .asset svg{width:min(86px,100%);height:72px}.app .asset .nm{color:#314957;font-size:11px}.app .empty-inspector{padding:20px 14px}.app .hint{color:#536b79}.app button:focus-visible,.app select:focus-visible,.modal button:focus-visible,.modal input:focus-visible,.modal select:focus-visible{outline:2px solid #226b82;outline-offset:2px}
+.v23-export-card{border:1px solid #dbe5e9;border-radius:8px;padding:12px;margin:10px 0}.v23-export-card h3{margin:0 0 9px;font-size:14px}.v23-export-card p,.v23-size-note{font-size:12px;color:#405d6c}.v23-export-card .fields2{grid-template-columns:1fr 1fr}.v23-export-card .btn{min-height:34px}
+@media(max-width:850px){.app .top{padding:0 8px}.app .brandsub{display:none}.app .top-right{gap:4px}.app .asset svg{height:60px}}
+</style>
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v21.0</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
   <div class="body">
-    <aside class="left" aria-label="Stem-cell illustration library">
-      <div class="sidehead"><div class="eyebrow">SCiFi library</div><div class="side-title">iPSC toolkit</div></div>
+    <aside class="left" aria-label="Scientific illustration library">
+      <div class="sidehead"><div class="eyebrow">SCiFi library</div><div class="side-title">Scientific illustrations</div></div>
       <div class="library-tabs" role="tablist" aria-label="Illustrations and templates"><button id="iconLibraryTab" role="tab" aria-selected="true" class="library-tab active">Icons</button><button id="templateLibraryTab" role="tab" aria-selected="false" class="library-tab">Templates</button></div>
       <section class="library-scroll" id="assetPane" role="tabpanel" aria-labelledby="iconLibraryTab">
-        <div class="searchbar"><span id="searchIcon"></span><input id="assetSearch" type="search" placeholder="Search iPSC cells, workflows, QC, assays" aria-label="Search assets" /></div>
+        <div class="searchbar"><span id="searchIcon"></span><input id="assetSearch" type="search" placeholder="Search illustrations…" aria-label="Search assets" /></div>
         <div class="icon-upload-panel"><button type="button" class="btn upload-icon-btn" id="uploadIconBtn" title="Import your own SVG, PNG, JPG or WebP illustration"><span aria-hidden="true">＋</span> Upload icon</button><button type="button" class="btn small" id="iconPackBtn" title="Import or export custom editable icon packs">⇄ Icon packs</button><span class="upload-help">SVG · PNG · JPG · WebP<br/>Organize with named collections</span></div>
          <div class="pack-collections" id="packCollections" aria-label="Imported icon collections"></div><div class="category-mode"><select id="categoryFilter" aria-label="Icon category"></select><button class="btn small" id="categoryModeBtn" type="button" aria-pressed="false">Show chips</button></div><div class="cats compact-hidden" id="categories"></div><label class="scifi-insert-label-control"><input id="scifiShowEach" type="checkbox" /> Show individual variants</label><div class="asset-counter" id="assetCount"></div><div class="asset-insert-hint">Click to insert · <b>Shift-click</b> to select multiple · drag any selected thumbnail to place all</div>
         <label class="scifi-insert-label-control" for="insertAssetWithLabel"><input id="insertAssetWithLabel" type="checkbox"/> <span>Insert icons with label</span></label><div id="scifiBatchAssetToolbar" class="scifi-batch-toolbar hidden"><strong id="scifiBatchAssetCount">0 selected</strong><button id="scifiBatchInsert" class="btn small" type="button">Insert selected</button><button id="scifiBatchClear" class="btn small" type="button">Clear</button></div><div class="asset-grid" id="assets"></div><div class="asset-pagination" id="assetPagination"></div>
@@ -552,6 +561,14 @@ function richStyle(o,patch={}){
  const n=(v,d,min,max)=>Math.max(min,Math.min(max,Number.isFinite(+v)?+v:d));
  return {fontFamily:validFontFamily(patch.fontFamily??o.fontFamily),fontSize:n(patch.fontSize??o.fontSize,20,6,160),color:validColor(patch.color??o.color),fontWeight:n(patch.fontWeight??o.fontWeight,500,100,900),italic:!!(patch.italic??o.italic),underline:!!(patch.underline??o.underline),strike:!!patch.strike,script:['super','sub'].includes(patch.script)?patch.script:'normal',highlight:/^#[0-9a-f]{6}$/i.test(patch.highlight||'')?patch.highlight:'none',tracking:n(patch.tracking,0,-2,15)};
 }
+// An inspector color replaces all character-level foreground overrides, not other styles.
+function setInspectorColor(o,color){
+ o.color=color;
+ if(o.type==='rect')o.fill=color;
+ if(o.type==='text'&&Array.isArray(o.richRuns)){
+  o.richRuns=o.richRuns.map(r=>{const style={...r.style};delete style.color;return {...r,style}}).filter(r=>Object.keys(r.style).length);
+ }
+}
 function richChars(o){
  const t=String(o.text||'').slice(0,1500),styles=Array.from({length:t.length},()=>({}));
  for(const r of (Array.isArray(o.richRuns)?o.richRuns.slice(0,1500):[])){
@@ -606,19 +623,20 @@ const templates={development:()=>{const result=[txt('Human embryogenesis',45,42,
 let objects=[],selected=null,selectedIds=new Set(),zoom=.75,activeTool='select',grid=false,undos=[],redos=[],pointer=null,arrowDraft=null,category='All',toastTimer=null,projectName='Untitled figure',internalClipboard=null,pasteNumber=0,contextPoint=null,lastTextClick=null,textEditor=null;
 let pageBackground='#ffffff';
 let drawKind='roundrect',panState=null;
+let pageUnit='px';const SCIFI_PPI=96;
 let canvasWidth=1000,canvasHeight=640; // shared project canvas size; each page retains its own background
 let pages=[{id:'pg1',name:'Page 1',background:pageBackground,elements:structuredClone(objects),undos:[],redos:[]}],activePageId='pg1',pageSerial=1;
-function canvasSize(){return {width:canvasWidth,height:canvasHeight}}
+function canvasSize(){return {width:canvasWidth,height:canvasHeight,unit:pageUnit}}
 function sanitizeCanvasSize(width,height){
  const w=Math.round(Number(width)),h=Math.round(Number(height));
- if(!Number.isFinite(w)||!Number.isFinite(h)||w<200||h<200||w>5000||h>5000)throw Error('Width and height must be between 200 and 5000 pixels');
+ if(!Number.isFinite(w)||!Number.isFinite(h)||w<24||h<24||w>5000||h>5000)throw Error('Width and height must be between 24 and 5000 design pixels');
  return {width:w,height:h};
 }
 function setCanvasSize(width,height,redrawCanvas=true){
  const c=sanitizeCanvasSize(width,height);canvasWidth=c.width;canvasHeight=c.height;
  stage.setAttribute('viewBox',`0 0 ${canvasWidth} ${canvasHeight}`);
  stage.setAttribute('width',String(canvasWidth));stage.setAttribute('height',String(canvasHeight));
- $('#canvasDimensions').textContent=`SCiFi · ${canvasWidth} × ${canvasHeight} px`;
+ $('#canvasDimensions').textContent=`${formatPageUnit(canvasWidth,pageUnit)} × ${formatPageUnit(canvasHeight,pageUnit)} ${pageUnit}`;
  setZoom(zoom);if(redrawCanvas)render();
 }
 function activePage(){return pages.find(p=>p.id===activePageId)}
@@ -1339,7 +1357,7 @@ function openIconWorkspace(id){
  if(iconWorkspace){showToast('Save or cancel the current icon first');return}
  const target=objects.find(o=>o.id===id);if(!target||target.type!=='symbol')return;
  closeTextEditor(true);closeContextMenu();storeCurrentPage();
- iconWorkspace={id,target:structuredClone(target),scene:{objects:structuredClone(objects),pages:structuredClone(pages),activePageId,pageSerial,canvasWidth,canvasHeight,pageBackground,undos:[...undos],redos:[...redos],zoom,projectName,selectedIds:[...selectedIds]}};
+ iconWorkspace={id,target:structuredClone(target),scene:{objects:structuredClone(objects),pages:structuredClone(pages),activePageId,pageSerial,canvasWidth,canvasHeight,pageUnit,pageBackground,undos:[...undos],redos:[...redos],zoom,projectName,selectedIds:[...selectedIds]}};
  objects=structuredClone(target.children||[]).map((o,i)=>({...o,id:o.id||uid()}));
  // The studio page is a workspace, not the exported icon boundary. Center the actual art
  // on a larger sheet, with equal margins on both sides, even for long repeat motifs.
@@ -1373,7 +1391,7 @@ function closeIconWorkspace(save){
  iconWorkspace=null;objects=old.objects;pages=old.pages;activePageId=old.activePageId;pageSerial=old.pageSerial;
  pageBackground=old.pageBackground;undos=old.undos;redos=old.redos;projectName=old.projectName;
  document.getElementById('iconWorkspaceBar').classList.add('hidden');
- setCanvasSize(old.canvasWidth,old.canvasHeight,false);setZoom(old.zoom);
+ pageUnit=old.pageUnit||'px';setCanvasSize(old.canvasWidth,old.canvasHeight,false);setZoom(old.zoom);
  selectedIds=new Set(old.selectedIds);selected=selectedIds.size===1?[...selectedIds][0]:null;
  activePathEditId=null;pointer=null;penPoints=[];setTool('select');
  if(updated){transact(()=>{const current=objects.find(o=>o.id===session.id);if(current){
@@ -1830,9 +1848,9 @@ function renderInspector(){let o=selectedObj(),el=$('#inspector');
    $('#multiFontFamily').onchange=e=>{if(e.target.value)applyAll(t=>{t.fontFamily=validFontFamily(e.target.value)})};
    $('#multiItalic').onchange=e=>applyAll(t=>{t.italic=e.target.checked});$('#multiUnderline').onchange=e=>applyAll(t=>{t.underline=e.target.checked});
   }
-  document.querySelectorAll('[data-multi-swatch]').forEach(b=>b.onclick=()=>applyAll(t=>{t.color=b.dataset.multiSwatch;if(t.type==='rect')t.fill=t.color}));
+  document.querySelectorAll('[data-multi-swatch]').forEach(b=>b.onclick=()=>applyAll(t=>{setInspectorColor(t,b.dataset.multiSwatch)}));
   // One undo point for each color-slider gesture, rather than one per input event.
-  let colorBefore=snapshot();$('#multiColor').addEventListener('input',e=>{for(const t of selectedObjs()){t.color=e.target.value;if(t.type==='rect')t.fill=t.color}redraw()});
+  let colorBefore=snapshot();$('#multiColor').addEventListener('input',e=>{for(const t of selectedObjs()){setInspectorColor(t,e.target.value)}redraw()});
   $('#multiColor').addEventListener('change',()=>{pushHistory(colorBefore);render()});
   let opacityBefore=snapshot();$('#multiOpacity').addEventListener('input',e=>{for(const t of selectedObjs())t.opacity=Number(e.target.value)/100;redraw()});
   $('#multiOpacity').addEventListener('change',()=>{pushHistory(opacityBefore);render()});
@@ -1933,8 +1951,8 @@ function renderInspector(){let o=selectedObj(),el=$('#inspector');
  bind('singleFontFamily','change',e=>transact(()=>{o.fontFamily=validFontFamily(e.target.value)}));
  bind('singleFontWeight','change',e=>transact(()=>{o.fontWeight=+e.target.value||500}));
  bind('singleItalic','change',e=>transact(()=>{o.italic=e.target.checked}));bind('singleUnderline','change',e=>transact(()=>{o.underline=e.target.checked}));
- bind('customColor','input',e=>{o.color=e.target.value;if(o.type==='rect')o.fill=e.target.value;redraw()});bind('customColor','change',()=>{pushHistory(colorBefore||snapshot());colorBefore=null;render()});let colorBefore=snapshot();
- document.querySelectorAll('[data-swatch]').forEach(b=>b.onclick=()=>transact(()=>{o.color=b.dataset.swatch;if(o.type==='rect')o.fill=o.color}));
+ bind('customColor','input',e=>{setInspectorColor(o,e.target.value);redraw()});bind('customColor','change',()=>{pushHistory(colorBefore||snapshot());colorBefore=null;render()});let colorBefore=snapshot();
+ document.querySelectorAll('[data-swatch]').forEach(b=>b.onclick=()=>transact(()=>{setInspectorColor(o,b.dataset.swatch)}));
  bind('opacity','input',e=>{o.opacity=+e.target.value/100;$('#opacityVal').textContent=e.target.value+'%';redraw()});bind('opacity','change',()=>{pushHistory(opacityBefore||snapshot());opacityBefore=null;render()});let opacityBefore=snapshot();
  const lineAtSliderStart=o.type==='arrow'?structuredClone(o):null;
  bind('rotation','input',e=>{if(o.type==='arrow'){const angle=(+e.target.value-lineAngle(lineAtSliderStart))*Math.PI/180,centerX=(lineAtSliderStart.x+lineAtSliderStart.x2)/2,centerY=(lineAtSliderStart.y+lineAtSliderStart.y2)/2;const a=rotatePoint(lineAtSliderStart.x,lineAtSliderStart.y,centerX,centerY,angle),b=rotatePoint(lineAtSliderStart.x2,lineAtSliderStart.y2,centerX,centerY,angle);o.x=a.x;o.y=a.y;o.x2=b.x;o.y2=b.y}else o.rotation=+e.target.value;$('#rotationVal').textContent=e.target.value+'°';redraw()});bind('rotation','change',()=>{pushHistory(rotationBefore||snapshot());rotationBefore=null;render()});let rotationBefore=snapshot();
@@ -2041,8 +2059,30 @@ function renderCategories(){const categories=['All','My icons','Human Embryogene
 
 function saveBlob(content,filename,mime){let blob=content instanceof Blob?content:new Blob([content],{type:mime}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
 function currentProjectData(){storeCurrentPage();return {version:10,app:'SCiFi',name:projectName,canvas:canvasSize(),activePageId,iconPacks:packRecords.map(p=>({...p})),customIcons:customAssets.map(a=>({...a})),pages:pages.map(p=>({id:p.id,name:p.name,background:validPageColor(p.background),elements:p.elements})),elements:structuredClone(objects)}}
-function exportSVG(){let doc=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${canvasWidth} ${canvasHeight}" width="${canvasWidth}" height="${canvasHeight}">${svgDocument(true)}</svg>`;saveBlob(doc,(projectName||'figure').replace(/[^a-z0-9_-]/gi,'_')+'.svg','image/svg+xml;charset=utf-8');showToast('SVG exported — editable vectors')}
-async function exportPNG(){try{let doc=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasWidth} ${canvasHeight}" width="${canvasWidth}" height="${canvasHeight}">${svgDocument(true)}</svg>`;let blob=new Blob([doc],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});let c=document.createElement('canvas');c.width=canvasWidth*2;c.height=canvasHeight*2;let ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(b=>{if(b){saveBlob(b,(projectName||'figure').replace(/[^a-z0-9_-]/gi,'_')+'.png','image/png');showToast('PNG exported at 2× resolution')}else showToast('PNG export failed')},'image/png')}catch(e){console.error(e);showToast('PNG export failed; try SVG')}}
+function exportSVG(){let doc=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${canvasWidth} ${canvasHeight}" width="${formatPageUnit(canvasWidth,pageUnit)}${pageUnit}" height="${formatPageUnit(canvasHeight,pageUnit)}${pageUnit}">${svgDocument(true)}</svg>`;saveBlob(doc,(projectName||'figure').replace(/[^a-z0-9_-]/gi,'_')+'.svg','image/svg+xml;charset=utf-8');showToast('SVG exported — editable vectors')}
+function pngExportSize(dpi){
+ if(!Number.isInteger(dpi)||dpi<1||dpi>2400)throw Error('Choose a whole-number resolution from 1 to 2400 DPI.');
+ const width=Math.max(1,Math.round(canvasWidth*dpi/SCIFI_PPI)),height=Math.max(1,Math.round(canvasHeight*dpi/SCIFI_PPI));
+ if(width>16384||height>16384||width*height>40000000)throw Error('Image exceeds the safe 40 megapixel / 16,384 px limit. Choose a lower DPI or use SVG.');
+ return {width,height,dpi};
+}
+function pngCrc(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}return (crc^0xffffffff)>>>0}
+async function pngWithDpi(blob,dpi){
+ const bytes=new Uint8Array(await blob.arrayBuffer()),view=new DataView(bytes.buffer);
+ if(bytes.length<33||view.getUint32(0)!==0x89504e47||view.getUint32(4)!==0x0d0a1a0a)throw Error('Invalid PNG');
+ const chunk=new Uint8Array(21),v=new DataView(chunk.buffer),ppm=Math.round(dpi/0.0254);v.setUint32(0,9);chunk.set([112,72,89,115],4);v.setUint32(8,ppm);v.setUint32(12,ppm);chunk[16]=1;v.setUint32(17,pngCrc(chunk.subarray(4,17)));
+ const parts=[bytes.subarray(0,8)];let pos=8,inserted=false;
+ while(pos+12<=bytes.length){const length=view.getUint32(pos),end=pos+length+12,type=view.getUint32(pos+4);if(end>bytes.length)throw Error('Invalid PNG chunk');if(type!==0x70485973)parts.push(bytes.subarray(pos,end));if(type===0x49484452){parts.push(chunk);inserted=true}pos=end}
+ if(!inserted||pos!==bytes.length)throw Error('Invalid PNG structure');return new Blob(parts,{type:'image/png'});
+}
+async function exportPNG(dpi=300){
+ let url;try{
+ const size=pngExportSize(dpi),doc=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${canvasWidth} ${canvasHeight}" width="${canvasWidth}" height="${canvasHeight}">${svgDocument(true)}</svg>`;
+ url=URL.createObjectURL(new Blob([doc],{type:'image/svg+xml;charset=utf-8'}));const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+ const c=document.createElement('canvas');c.width=size.width;c.height=size.height;const ctx=c.getContext('2d');if(!ctx)throw Error('Canvas allocation failed');ctx.drawImage(img,0,0,c.width,c.height);
+ const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));if(!blob)throw Error('PNG encoding failed');const output=await pngWithDpi(blob,dpi);saveBlob(output,projectFileName(projectName).replace(/\.json$/i,'')+'_'+dpi+'dpi.png','image/png');showToast('PNG exported · '+dpi+' DPI');
+ }catch(e){console.error(e);showToast('PNG export failed: '+(e.message||'try SVG'))}finally{if(url)URL.revokeObjectURL(url)}
+}
 function projectFileName(name){const base=String(name||'Untitled figure').trim().replace(/\.json$/i,'').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').replace(/[. ]+$/g,'').slice(0,120).trim()||'Untitled figure';return base+'.json'}
 async function saveProjectFile(data,onSaved){
  const suggestedName=projectFileName(data.name);
@@ -2066,7 +2106,7 @@ async function saveProjectFile(data,onSaved){
 }
 let projectSavePending=false;
 async function saveProject(){if(iconWorkspace){showToast('Save icon & return to figure first');return}if(projectSavePending)return;projectSavePending=true;try{await saveProjectFile(currentProjectData(),name=>{projectName=name;$('#projectName').value=name})}finally{projectSavePending=false}}
-function exportAllPagesSVG(){storeCurrentPage();const content=pages.map((p,i)=>`<g transform="translate(0 ${i*canvasHeight})">${svgDocument(true,p.elements,p.background)}</g>`).join('');const doc=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasWidth} ${pages.length*canvasHeight}" width="${canvasWidth}" height="${pages.length*canvasHeight}">${content}</svg>`;saveBlob(doc,(projectName||'figure').replace(/[^a-z0-9_-]/gi,'_')+'_all-pages.svg','image/svg+xml;charset=utf-8');showToast('All pages exported as one stacked SVG')}
+function exportAllPagesSVG(){storeCurrentPage();const content=pages.map((p,i)=>`<g transform="translate(0 ${i*canvasHeight})">${svgDocument(true,p.elements,p.background)}</g>`).join('');const doc=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasWidth} ${pages.length*canvasHeight}" width="${formatPageUnit(canvasWidth,pageUnit)}${pageUnit}" height="${formatPageUnit(pages.length*canvasHeight,pageUnit)}${pageUnit}">${content}</svg>`;saveBlob(doc,(projectName||'figure').replace(/[^a-z0-9_-]/gi,'_')+'_all-pages.svg','image/svg+xml;charset=utf-8');showToast('All pages exported as one stacked SVG')}
 
 function showToast(message){let t=$('#toast');t.textContent=message;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
 function closeModal(){$('#modalOverlay').classList.add('hidden')}
@@ -2156,26 +2196,50 @@ async function renderGalleryItems(){
  wrap.querySelectorAll('[data-gal-delete]').forEach(btn=>btn.onclick=async()=>{const rec=byIdRecord(btn.dataset.galDelete);if(!rec||!confirm('Delete this saved gallery copy?'))return;await galleryAction('delete',rec.id);if(galleryActiveId===rec.id)galleryActiveId=null;await renderGalleryItems()});
  wrap.querySelectorAll('[data-gal-download]').forEach(btn=>btn.onclick=()=>{const rec=byIdRecord(btn.dataset.galDownload);if(rec)saveProjectFile({...rec.data,name:rec.name})});
 }
+const PAGE_FACTORS={px:1,mm:SCIFI_PPI/25.4,cm:SCIFI_PPI/2.54,in:SCIFI_PPI};
+const DIN_PAGES={A0:[841,1189],A1:[594,841],A2:[420,594],A3:[297,420],A4:[210,297],A5:[148,210],A6:[105,148]};
+function formatPageUnit(px,unit){return Number((px/PAGE_FACTORS[unit]).toFixed(unit==='px'?0:4))}
+function pageSizeFields(prefix,w,h,unit){
+ return `<div class="field"><label for="${prefix}Preset">Page format</label><select id="${prefix}Preset"><option value="custom">Custom</option><optgroup label="DIN / ISO A series">${Object.entries(DIN_PAGES).map(([k,v])=>'<option value="'+k+'">'+k+' · '+v.join(' × ')+' mm</option>').join('')}</optgroup><optgroup label="Digital figures"><option value="1000,640">Standard figure</option><option value="1600,900">Widescreen</option><option value="1200,1200">Square</option><option value="1200,1600">Portrait</option></optgroup></select></div>
+ <div class="fields2"><div class="field"><label for="${prefix}Unit">Units</label><select id="${prefix}Unit">${[['px','Pixels'],['mm','Millimeters'],['cm','Centimeters'],['in','Inches']].map(([v,n])=>'<option value="'+v+'" '+(unit===v?'selected':'')+'>'+n+'</option>').join('')}</select></div><div class="field"><label for="${prefix}Orientation">Orientation</label><select id="${prefix}Orientation"><option value="portrait" ${h>=w?'selected':''}>Portrait</option><option value="landscape" ${w>h?'selected':''}>Landscape</option></select></div></div>
+ <div class="canvas-size-preview"><div class="field"><label for="${prefix}W">Width</label><input id="${prefix}W" type="number" step="any" min="0.01" value="${formatPageUnit(w,unit)}"></div><div class="field"><label for="${prefix}H">Height</label><input id="${prefix}H" type="number" step="any" min="0.01" value="${formatPageUnit(h,unit)}"></div></div><p class="v23-size-note" id="${prefix}Summary" aria-live="polite"></p>`;
+}
+function wirePageSizeFields(prefix,w,h,initialUnit){
+ const get=k=>$('#'+prefix+k),unit=get('Unit'),preset=get('Preset'),orientation=get('Orientation'),W=get('W'),H=get('H');let previous=initialUnit;
+ const px=()=>[+W.value*PAGE_FACTORS[unit.value],+H.value*PAGE_FACTORS[unit.value]];
+ const refresh=()=>{const [a,b]=px();get('Summary').textContent=Number.isFinite(a+b)?formatPageUnit(a,'cm')+' × '+formatPageUnit(b,'cm')+' cm · '+Math.round(a)+' × '+Math.round(b)+' design px (96/in)':''};
+ const display=(a,b)=>{W.value=formatPageUnit(a,unit.value);H.value=formatPageUnit(b,unit.value);refresh()};
+ const orient=(a,b)=>orientation.value==='landscape'?[Math.max(a,b),Math.min(a,b)]:[Math.min(a,b),Math.max(a,b)];
+ preset.onchange=()=>{const val=preset.value;if(val==='custom')return;let a,b;if(DIN_PAGES[val]){[a,b]=DIN_PAGES[val].map(n=>n*PAGE_FACTORS.mm);unit.value=previous='mm';[a,b]=orient(a,b)}else{[a,b]=val.split(',').map(Number);unit.value=previous='px';orientation.value=a>b?'landscape':'portrait'}display(a,b)};
+ unit.onchange=()=>{const a=+W.value*PAGE_FACTORS[previous],b=+H.value*PAGE_FACTORS[previous];previous=unit.value;display(a,b)};
+ orientation.onchange=()=>display(...orient(...px()));
+ W.oninput=H.oninput=()=>{preset.value='custom';orientation.value=+W.value>+H.value?'landscape':'portrait';refresh()};
+ refresh();return ()=>{const [a,b]=px();return {...sanitizeCanvasSize(a,b),unit:unit.value}};
+}
 function newProjectDialog(){
- modal(`<h2>New SCiFi figure</h2><p>Create a blank document. Pick canvas dimensions now, or change them later using <b>Canvas size</b> above the page.</p>
-  <div class="field"><label for="newDocName">Project name</label><input id="newDocName" value="Untitled stem cell figure" maxlength="90" /></div>
-  <div class="field"><label for="newPreset">Canvas preset</label><select id="newPreset"><option value="1000,640">Figure · 1000 × 640</option><option value="1600,900">Widescreen · 1600 × 900</option><option value="1200,1200">Square · 1200 × 1200</option><option value="1200,1600">Portrait · 1200 × 1600</option><option value="custom">Custom dimensions</option></select></div>
-  <div class="canvas-size-preview"><div class="field"><label for="newW">Width (px)</label><input type="number" id="newW" min="200" max="5000" value="1000" /></div><div class="field"><label for="newH">Height (px)</label><input type="number" id="newH" min="200" max="5000" value="640" /></div></div>
-  <div class="field"><label for="newBg">Canvas background</label><input type="color" id="newBg" value="#ffffff" /></div><label style="display:flex;gap:9px;align-items:center;font-size:12px;margin:0 0 13px"><input type="checkbox" id="newTransparent"/> Transparent canvas</label>
-  <button class="btn primary" id="createNewDoc">＋ Create blank figure</button><p style="font-size:11px;color:#9aa9b7">Creating a figure doesn't delete saved projects in the gallery.</p>`);
- $('#newPreset').onchange=e=>{if(e.target.value!=='custom'){let [w,h]=e.target.value.split(',');$('#newW').value=w;$('#newH').value=h}};
- $('#createNewDoc').onclick=()=>{let size;try{size=sanitizeCanvasSize($('#newW').value,$('#newH').value)}catch(err){showToast(err.message);return}
-  if(objects.length&&!confirm('Create a new blank figure? Unsaved changes to the current figure will be lost.'))return;
-  closeTextEditor(false);projectName=String($('#newDocName').value||'Untitled figure').trim().slice(0,90)||'Untitled figure';$('#projectName').value=projectName;
-  pageBackground=validPageColor($('#newTransparent').checked?'transparent':$('#newBg').value);objects=[];pages=[{id:'pg1',name:'Page 1',background:pageBackground,elements:[],undos:[],redos:[]}];pageSerial=1;activePageId='pg1';undos=[];redos=[];galleryActiveId=null;pointer=null;arrowDraft=null;selectOnly(null);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground;
-  setCanvasSize(size.width,size.height,false);setTool('select');render();updateHistory();closeModal();showToast('New blank figure created')};
+ modal(`<h2>New figure</h2><p>Choose a digital canvas or a standard print format.</p>
+ <div class="field"><label for="newDocName">Project name</label><input id="newDocName" value="Untitled figure" maxlength="90"></div>${pageSizeFields('new',1000,640,'px')}
+ <div class="field"><label for="newBg">Canvas background</label><input type="color" id="newBg" value="#ffffff"></div><label style="display:flex;gap:9px;align-items:center;font-size:12px;margin:0 0 13px"><input type="checkbox" id="newTransparent"> Transparent canvas</label>
+ <button class="btn primary" id="createNewDoc">Create blank figure</button><p>Saved projects in your gallery are not deleted.</p>`);
+ const read=wirePageSizeFields('new',1000,640,'px');
+ $('#createNewDoc').onclick=()=>{let size;try{size=read()}catch(err){showToast(err.message);return}
+ if(objects.length&&!confirm('Create a new blank figure? Unsaved changes to the current figure will be lost.'))return;
+ closeTextEditor(false);projectName=String($('#newDocName').value||'Untitled figure').trim().slice(0,90)||'Untitled figure';$('#projectName').value=projectName;
+ pageBackground=validPageColor($('#newTransparent').checked?'transparent':$('#newBg').value);objects=[];pages=[{id:'pg1',name:'Page 1',background:pageBackground,elements:[],undos:[],redos:[]}];pageSerial=1;activePageId='pg1';undos=[];redos=[];galleryActiveId=null;pointer=null;arrowDraft=null;selectOnly(null);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground;
+ pageUnit=size.unit;setCanvasSize(size.width,size.height,false);setTool('select');render();updateHistory();closeModal();nxFitAvailable();showToast('New blank figure created')};
 }
-function canvasSizeDialog(){modal(`<h2>Canvas dimensions</h2><p>Change the page size for <b>all pages</b> in this project. Existing objects keep their current coordinates and dimensions.</p>
- <div class="canvas-size-preview"><div class="field"><label for="pageWidthInput">Width (px)</label><input type="number" id="pageWidthInput" min="200" max="5000" value="${canvasWidth}" /></div><div class="field"><label for="pageHeightInput">Height (px)</label><input type="number" id="pageHeightInput" min="200" max="5000" value="${canvasHeight}" /></div></div>
- <button class="btn primary" id="applyCanvasSize">Apply canvas size</button>`);
- $('#applyCanvasSize').onclick=()=>{try{const size=sanitizeCanvasSize($('#pageWidthInput').value,$('#pageHeightInput').value);setCanvasSize(size.width,size.height);closeModal();showToast('Canvas resized for all pages')}catch(err){showToast(err.message)}}
+function canvasSizeDialog(){
+ modal(`<h2>Canvas size</h2><p>Applies to all pages. Existing objects retain their positions and sizes.</p>${pageSizeFields('page',canvasWidth,canvasHeight,pageUnit)}<button class="btn primary" id="applyCanvasSize">Apply canvas size</button>`);
+ const read=wirePageSizeFields('page',canvasWidth,canvasHeight,pageUnit);
+ $('#applyCanvasSize').onclick=()=>{try{const size=read();pageUnit=size.unit;setCanvasSize(size.width,size.height);closeModal();nxFitAvailable();showToast('Canvas resized for all pages')}catch(err){showToast(err.message)}};
 }
-function showExport(){modal(`<h2>Export your figures</h2><p>Export the selected page as SVG or PNG, combine pages into a stacked SVG, or save every page in an editable project file.</p><div class="template-list"><button class="template" id="svgExport"><span class="avatar">${ico('download',23)}</span><span><strong>Export current page · SVG</strong><small>Scalable, editable vector artwork</small></span></button><button class="template" id="pngExport"><span class="avatar">${ico('download',23)}</span><span><strong>Export current page · PNG</strong><small>${canvasWidth*2} × ${canvasHeight*2} pixels · uses page background</small></span></button><button class="template" id="allSvgExport"><span class="avatar">${ico('layout',23)}</span><span><strong>Export all pages · SVG</strong><small>All pages vertically stacked as one scalable SVG</small></span></button><button class="template" id="jsonExport"><span class="avatar">${ico('save',23)}</span><span><strong>Save editable multipage project</strong><small>Contains every page and object</small></span></button></div>`);$('#svgExport').onclick=()=>{closeModal();exportSVG()};$('#pngExport').onclick=()=>{closeModal();exportPNG()};$('#allSvgExport').onclick=()=>{closeModal();exportAllPagesSVG()};$('#jsonExport').onclick=()=>{closeModal();saveProject()}}
+function showExport(){
+ modal(`<h2>Export figures</h2><p>Vector or publication-resolution raster artwork.</p><div class="v23-export-card"><h3>PNG · raster image</h3><div class="fields2"><div class="field"><label for="exportDpi">Resolution (DPI)</label><select id="exportDpi"><option>96</option><option>150</option><option selected>300</option><option>600</option><option>1200</option><option value="custom">Custom</option></select></div><div class="field hidden" id="customDpiWrap"><label for="customDpi">Custom DPI</label><input id="customDpi" type="number" min="1" max="2400" value="300"></div></div><p id="exportPixelSummary" aria-live="polite"></p><button class="btn primary" id="pngExport">Export PNG</button></div><div class="v23-export-card"><h3>SVG · scalable vector</h3><p>Physical page size retained. DPI is not needed for vector elements.</p><div class="actiongrid"><button class="btn" id="svgExport">Current page</button><button class="btn" id="allSvgExport">All pages · stacked</button></div></div><div class="v23-export-card"><h3>Editable project</h3><button class="btn" id="jsonExport">Save project (.json)</button></div>`);
+ const d=()=>+($('#exportDpi').value==='custom'?$('#customDpi').value:$('#exportDpi').value);
+ const refresh=()=>{$('#customDpiWrap').classList.toggle('hidden',$('#exportDpi').value!=='custom');try{const s=pngExportSize(d());$('#exportPixelSummary').textContent=s.width+' × '+s.height+' px · '+formatPageUnit(canvasWidth,'cm')+' × '+formatPageUnit(canvasHeight,'cm')+' cm · '+s.dpi+' DPI';$('#pngExport').disabled=false}catch(e){$('#exportPixelSummary').textContent=e.message;$('#pngExport').disabled=true}};
+ $('#exportDpi').onchange=refresh;$('#customDpi').oninput=refresh;refresh();
+ $('#pngExport').onclick=()=>{const dpi=d();closeModal();exportPNG(dpi)};$('#svgExport').onclick=()=>{closeModal();exportSVG()};$('#allSvgExport').onclick=()=>{closeModal();exportAllPagesSVG()};$('#jsonExport').onclick=()=>{closeModal();saveProject()};
+}
 // SCiFi v10 — portable editable icon packs with named library collections.
 const ICON_PACK_KIND='scifi-icon-pack',ICON_PACK_VERSION=1;
 function iconPackPreview(a){
@@ -2285,7 +2349,7 @@ async function loadProjectData(data){if(iconWorkspace)throw Error('Save or cance
    const cleanSymbols=items=>{for(const o of items){if(o.type==='symbol')o.children=nxCleanChildren(o.children);}};
 closeTextEditor(false);const sz=sanitizeCanvasSize(data.canvas?.width||1000,data.canvas?.height||640);pages=rawPages.map((p,i)=>({id:'pg'+(i+1),name:String(p.name||'Page '+(i+1)).slice(0,80),background:validPageColor(p.background),elements:sanitize(p.elements),undos:[],redos:[]}));pageSerial=pages.length;for(const p of pages)cleanSymbols(p.elements);
  const matchIndex=rawPages.findIndex(p=>p.id===data.activePageId);activePageId=pages[Math.max(0,matchIndex)].id;objects=structuredClone(activePage().elements);pageBackground=validPageColor(activePage().background);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground;undos=[];redos=[];selectOnly(null);render();updateHistory();
- projectName=String(data.name||'Imported figure').slice(0,90);$('#projectName').value=projectName;setCanvasSize(sz.width,sz.height);renderCategories();renderAssets();showToast('Project loaded · '+pages.length+' page'+(pages.length>1?'s':''));
+ pageUnit=['px','mm','cm','in'].includes(data.canvas?.unit)?data.canvas.unit:'px';projectName=String(data.name||'Imported figure').slice(0,90);$('#projectName').value=projectName;setCanvasSize(sz.width,sz.height);renderCategories();renderAssets();showToast('Project loaded · '+pages.length+' page'+(pages.length>1?'s':''));
 }
 $('#openFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{await loadProjectData(JSON.parse(await f.text()));galleryActiveId=null}catch(err){console.error(err);showToast('Could not open that project file')}e.target.value=''});
 $('#allTextBtn').onclick=selectAllText;

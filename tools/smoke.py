@@ -59,6 +59,38 @@ with sync_playwright() as p:
             page.evaluate("saveProject()")
         assert download.value.suggested_filename == "Fallback figure.json"
         assert page.locator("#projectName").input_value() == "Fallback figure"
+        # v23: preserve rich styles while overriding text color via the inspector.
+        page.evaluate("""() => {
+            const o=txt('Mixed',10,10,20,'#000000',500);
+            o.richRuns=[{start:0,end:2,style:{color:'#ff0000',italic:true}}];
+            objects.push(o);selectOnly(o.id);render();
+        }""")
+        page.locator("#customColor").evaluate("(el) => {el.value='#007700';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}")
+        assert page.evaluate("selectedObj().color") == "#007700"
+        assert page.evaluate("selectedObj().richRuns[0].style.italic")
+        assert page.evaluate("!('color' in selectedObj().richRuns[0].style)")
+        page.evaluate("canvasSizeDialog()")
+        page.locator("#pagePreset").select_option("A4")
+        page.locator("#pageOrientation").select_option("portrait")
+        page.locator("#pageUnit").select_option("cm")
+        page.locator("#applyCanvasSize").click()
+        assert page.evaluate("canvasSize()") == {"width":794,"height":1123,"unit":"cm"}
+        assert page.evaluate("pngExportSize(300)") == {"width":2481,"height":3509,"dpi":300}
+        # Test real PNG metadata and dimensions with a smaller image.
+        page.evaluate("setCanvasSize(96,96)")
+        with page.expect_download() as exported:
+            page.evaluate("exportPNG(300)")
+        import struct, zlib
+        raw = Path(exported.value.path()).read_bytes()
+        assert struct.unpack_from(">II",raw,16) == (300,300)
+        pos=8; chunks=[]
+        while pos<len(raw):
+            n,kind=struct.unpack_from(">I4s",raw,pos)
+            data=raw[pos+8:pos+8+n]
+            assert zlib.crc32(kind+data)==struct.unpack_from(">I",raw,pos+8+n)[0]
+            if kind==b"pHYs": chunks.append(struct.unpack(">IIB",data))
+            pos+=12+n
+        assert chunks==[(11811,11811,1)]
         assert not errors, errors
         page.close()
     browser.close()
