@@ -14,6 +14,10 @@ v22.1 public preview · 27 November 2026
 
 The preview contains vector drawing and layout tools, editable paths and shapes, text and arrows, an icon editor, synthetic plot tools, local project import/export and 471 editable scientific illustrations: 329 molecular biology, 13 human organoids, 36 expanded cell atlas, 19 early progenitors, 17 original lineage illustrations, 34 embryogenesis illustrations and all 23 Carnegie stages. Molecular variants are grouped into families by default; enable **Show individual variants** for the complete count. Other unresolved private artwork, including laboratory essentials, branded instruments and legacy drawings, is excluded.
 
+## v23 UI review 6 — Rulers and guides
+
+Optional rulers follow the current canvas unit (px, mm, cm, in), page origin, pan and zoom. Drag from a ruler to create a guide, then drag its blue marker to adjust it or double-click the marker to remove it. Guides… allows precise numeric positioning and removal. Visible guides participate in existing smart snapping; they are stored per page in project JSON, copied when duplicating a page, and omitted from figure exports. Rulers are off by default. Existing projects without guide records open normally.
+
 ## v23 UI review 5 — Color controls
 
 A shared HEX palette is available beside native color pickers, including outline, background, text and gradient controls. It accepts three- and six-digit HEX, stores up to 16 recent colors locally where browser storage permits, and uses the browser-native screen eyedropper where supported. Original color change handlers remain responsible for editing and undo. Double-clicking sidebar handles now toggles minimum/previous width; Home resets to the responsive default.

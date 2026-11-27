@@ -191,6 +191,33 @@ with sync_playwright() as p:
         page.locator("#applyCanvasSize").click()
         assert page.evaluate("canvasSize()") == {"width":794,"height":1123,"unit":"cm"}
         assert page.evaluate("pngExportSize(300)") == {"width":2481,"height":3509,"dpi":300}
+        # UI review 6: optional unit-aware rulers, actual ruler drag and non-exported page guides.
+        assert not page.locator("#uiRulerTop").is_visible()
+        page.locator("#uiRulerToggle").click()
+        assert page.locator("#uiRulerTop").is_visible()
+        page.evaluate("nxFitAvailable();uiRulerDraw()")
+        assert page.locator("#uiRulerCorner").inner_text() == "cm"
+        page.locator("#uiGuideButton").click()
+        page.locator("#uiGuideAxis").select_option("x")
+        page.locator("#uiGuideValue").fill("5")
+        page.locator("#uiGuideAdd").click()
+        page.evaluate("closeModal();uiRulerDraw()")
+        assert abs(page.evaluate("uiGuideList()[0].v")-96*5/2.54) < .001
+        assert page.evaluate("currentProjectData().pages[0].guides.length") == 1
+        assert page.evaluate("window.scifiGuideTargets('x').length") == 1
+        assert page.locator("#uiGuideOverlay line").count() == 1
+        assert page.evaluate("!svgDocument(true).includes('uiGuideOverlay')")
+        # Drag from top ruler into canvas, using actual screen coordinates.
+        top=page.locator("#uiRulerTop").bounding_box()
+        target=page.evaluate("""() => {const m=stage.getScreenCTM();return {x:m.e+canvasWidth*m.a/2,y:m.f+canvasHeight*m.d/2}}""")
+        page.mouse.move(top["x"]+top["width"]/2,top["y"]+top["height"]/2)
+        page.mouse.down()
+        page.mouse.move(target["x"],target["y"],steps=8)
+        page.mouse.up()
+        assert page.evaluate("uiGuideList().some(g=>g.axis==='y')")
+        page.locator("#uiRulerToggle").click()
+        assert not page.locator("#uiRulerTop").is_visible()
+        assert page.evaluate("window.scifiGuideTargets('x').length") == 0
         # Large-format pages must fit below the old 25% zoom minimum.
         page.evaluate("setCanvasSize(3179,4494); nxFitAvailable()")
         assert page.evaluate("zoom") < .25
