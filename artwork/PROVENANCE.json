@@ -1,0 +1,466 @@
+{
+  "scope": "57 developmental illustrations included in v22.0 public preview",
+  "rightsHolder": "IUF - Leibniz-Institut für umweltmedizinische Forschung GmbH",
+  "projectCreator": "Jochen Dobner",
+  "license": "CC0-1.0",
+  "basis": "Developer confirmed independent native-vector construction through iterative scientific instructions, not direct tracing or vectorization of third-party illustrations, and authorized inclusion under the previously reported institutional CC0 release policy. Source geometry was compared to the attested source versions. No independent legal opinion or external visual comparison is claimed.",
+  "date": "2026-11-27",
+  "assets": [
+    {
+      "id": "scifi-builtin-v83-v8-oocyte",
+      "name": "Oocyte",
+      "collection": "Human Embryogenesis",
+      "elementCount": 30,
+      "sourceBlob": "be074397ba3e193b8fdfc184ab7e3c2a7ec347de",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-zygote-two-pronuclei",
+      "name": "Zygote · two pronuclei",
+      "collection": "Human Embryogenesis",
+      "elementCount": 33,
+      "sourceBlob": "be074397ba3e193b8fdfc184ab7e3c2a7ec347de",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-2-cell-embryo",
+      "name": "2-cell embryo",
+      "collection": "Human Embryogenesis",
+      "elementCount": 7,
+      "sourceBlob": "be074397ba3e193b8fdfc184ab7e3c2a7ec347de",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-4-cell-embryo",
+      "name": "4-cell embryo",
+      "collection": "Human Embryogenesis",
+      "elementCount": 11,
+      "sourceBlob": "be074397ba3e193b8fdfc184ab7e3c2a7ec347de",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-8-cell-embryo",
+      "name": "8-cell embryo",
+      "collection": "Human Embryogenesis",
+      "elementCount": 19,
+      "sourceBlob": "be074397ba3e193b8fdfc184ab7e3c2a7ec347de",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-compacting-morula",
+      "name": "Compacting morula",
+      "collection": "Human Embryogenesis",
+      "elementCount": 35,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-early-blastocyst",
+      "name": "Early blastocyst",
+      "collection": "Human Embryogenesis",
+      "elementCount": 57,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-expanded-blastocyst",
+      "name": "Expanded blastocyst",
+      "collection": "Human Embryogenesis",
+      "elementCount": 67,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-hatching-blastocyst",
+      "name": "Hatching blastocyst",
+      "collection": "Human Embryogenesis",
+      "elementCount": 66,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-implanting-blastocyst",
+      "name": "Implanting blastocyst",
+      "collection": "Human Embryogenesis",
+      "elementCount": 76,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-inner-cell-mass",
+      "name": "Inner cell mass",
+      "collection": "Human Embryogenesis",
+      "elementCount": 20,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-trophectoderm",
+      "name": "Trophectoderm",
+      "collection": "Human Embryogenesis",
+      "elementCount": 42,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-cytotrophoblast",
+      "name": "Cytotrophoblast",
+      "collection": "Human Embryogenesis",
+      "elementCount": 21,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-syncytiotrophoblast",
+      "name": "Syncytiotrophoblast",
+      "collection": "Human Embryogenesis",
+      "elementCount": 21,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-bilaminar-embryonic-disc",
+      "name": "Bilaminar embryonic disc",
+      "collection": "Human Embryogenesis",
+      "elementCount": 48,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-primary-yolk-sac",
+      "name": "Primary yolk sac",
+      "collection": "Human Embryogenesis",
+      "elementCount": 49,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-secondary-yolk-sac-amnion",
+      "name": "Secondary yolk sac & amnion",
+      "collection": "Human Embryogenesis",
+      "elementCount": 50,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-pregastrulation-epiblast-disc",
+      "name": "Pregastrulation epiblast · disc",
+      "collection": "Human Embryogenesis",
+      "elementCount": 49,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-primitive-streak-formation",
+      "name": "Primitive streak formation",
+      "collection": "Human Embryogenesis",
+      "elementCount": 51,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-primitive-node",
+      "name": "Primitive node",
+      "collection": "Human Embryogenesis",
+      "elementCount": 53,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-notochordal-process",
+      "name": "Notochordal process",
+      "collection": "Human Embryogenesis",
+      "elementCount": 54,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-anterior-posterior-axis",
+      "name": "Anterior–posterior axis",
+      "collection": "Human Embryogenesis",
+      "elementCount": 55,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-cellular-ingression-emt",
+      "name": "Cellular ingression & EMT",
+      "collection": "Human Embryogenesis",
+      "elementCount": 78,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-trilaminar-embryonic-disc",
+      "name": "Trilaminar embryonic disc",
+      "collection": "Human Embryogenesis",
+      "elementCount": 72,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-neural-plate",
+      "name": "Neural plate",
+      "collection": "Human Embryogenesis",
+      "elementCount": 73,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-neural-groove",
+      "name": "Neural groove",
+      "collection": "Human Embryogenesis",
+      "elementCount": 60,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-elevated-neural-folds",
+      "name": "Elevated neural folds",
+      "collection": "Human Embryogenesis",
+      "elementCount": 60,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-closing-neural-tube",
+      "name": "Closing neural tube",
+      "collection": "Human Embryogenesis",
+      "elementCount": 80,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-closed-neural-tube",
+      "name": "Closed neural tube",
+      "collection": "Human Embryogenesis",
+      "elementCount": 124,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-neural-crest-migration",
+      "name": "Neural crest migration",
+      "collection": "Human Embryogenesis",
+      "elementCount": 140,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-developing-notochord",
+      "name": "Developing notochord",
+      "collection": "Human Embryogenesis",
+      "elementCount": 46,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-presomitic-mesoderm",
+      "name": "Presomitic mesoderm",
+      "collection": "Human Embryogenesis",
+      "elementCount": 37,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-somitogenesis",
+      "name": "Somitogenesis",
+      "collection": "Human Embryogenesis",
+      "elementCount": 153,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-v8-embryonic-body-folding",
+      "name": "Embryonic body folding",
+      "collection": "Human Embryogenesis",
+      "elementCount": 4,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs01",
+      "name": "CS01 · Fertilization",
+      "collection": "Carnegie stages",
+      "elementCount": 8,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs02",
+      "name": "CS02 · Cleavage",
+      "collection": "Carnegie stages",
+      "elementCount": 11,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs03",
+      "name": "CS03 · Free blastocyst",
+      "collection": "Carnegie stages",
+      "elementCount": 65,
+      "sourceBlob": "3938724469334e7d86592717a0054093b6d44019",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs04",
+      "name": "CS04 · Attachment",
+      "collection": "Carnegie stages",
+      "elementCount": 96,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs05",
+      "name": "CS05 · Implantation · section",
+      "collection": "Carnegie stages",
+      "elementCount": 90,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs06",
+      "name": "CS06 · Primitive streak",
+      "collection": "Carnegie stages",
+      "elementCount": 8,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs07",
+      "name": "CS07 · Notochordal process",
+      "collection": "Carnegie stages",
+      "elementCount": 13,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs08",
+      "name": "CS08 · Presomite embryo · dorsal",
+      "collection": "Carnegie stages",
+      "elementCount": 15,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs09",
+      "name": "CS09 · First somites",
+      "collection": "Carnegie stages",
+      "elementCount": 12,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs10",
+      "name": "CS10 · Neural fold fusion",
+      "collection": "Carnegie stages",
+      "elementCount": 12,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs11",
+      "name": "CS11 · Rostral neuropore closure",
+      "collection": "Carnegie stages",
+      "elementCount": 18,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs12",
+      "name": "CS12 · Caudal neuropore closure",
+      "collection": "Carnegie stages",
+      "elementCount": 23,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs13",
+      "name": "CS13 · Early organogenesis · lateral",
+      "collection": "Carnegie stages",
+      "elementCount": 28,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs14",
+      "name": "CS14 · Lens pit & optic cup",
+      "collection": "Carnegie stages",
+      "elementCount": 24,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs15",
+      "name": "CS15 · Hand plates",
+      "collection": "Carnegie stages",
+      "elementCount": 22,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs16",
+      "name": "CS16 · Foot plates",
+      "collection": "Carnegie stages",
+      "elementCount": 21,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs17",
+      "name": "CS17 · Finger rays",
+      "collection": "Carnegie stages",
+      "elementCount": 22,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs18",
+      "name": "CS18 · Toe rays",
+      "collection": "Carnegie stages",
+      "elementCount": 19,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs19",
+      "name": "CS19 · Trunk elongation",
+      "collection": "Carnegie stages",
+      "elementCount": 13,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs20",
+      "name": "CS20 · Elbow flexion",
+      "collection": "Carnegie stages",
+      "elementCount": 15,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs21",
+      "name": "CS21 · Approaching midline",
+      "collection": "Carnegie stages",
+      "elementCount": 15,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs22",
+      "name": "CS22 · Eyelids & external ears",
+      "collection": "Carnegie stages",
+      "elementCount": 15,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "scifi-builtin-v83-carnegie-v83-cs23",
+      "name": "CS23 · End of embryonic period · lateral",
+      "collection": "Carnegie stages",
+      "elementCount": 22,
+      "sourceBlob": "d0ad08582bb5f9415ed766e0865453e3de9f8cb3",
+      "license": "CC0-1.0"
+    }
+  ]
+}
