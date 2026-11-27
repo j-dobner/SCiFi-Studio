@@ -382,6 +382,42 @@ with sync_playwright() as p:
         assert page.evaluate("objects[0].children[0].fill") == "#112233"
         # Reset the test fixture to a single page without invoking the delete-page dialog.
         page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
+        # v23.4: Combine diagnostics, filled open closure, multi-shape union, preserved cubic spans.
+        page.evaluate("""() => {
+            const a=pathElem([{x:10,y:20,outX:25,outY:0},{x:70,y:20,inX:55,inY:0},{x:70,y:70},{x:10,y:70}],'#b88aad',2,'#e6c1d8',false);
+            const b=rect(60,40,45,20,'#e6c1d8',0);b.strokeColor='#b88aad';
+            const c=rect(95,40,25,20,'#e6c1d8',0);
+            objects=[a,b,c];selection(objects.map(o=>o.id));render();window.boolOriginal=JSON.stringify(objects);
+        }""")
+        page.locator("#nxBooleanBtn").click()
+        assert page.locator("[data-bool=union]").is_disabled()
+        assert "Filled open path" in page.locator("#nxBoolSelection").inner_text()
+        page.locator("#nxBoolCloseOpen").check()
+        assert page.locator("[data-bool=union]").is_enabled()
+        page.locator("[data-bool=union]").click()
+        assert page.evaluate("objects.length") == 1
+        assert page.evaluate("objects[0].closed") is True
+        assert page.evaluate("objects[0].nodes.some(n=>Number.isFinite(n.outX))")
+        assert page.evaluate("nxInside({x:115,y:50},nxBoolNativeContours(objects[0],false).loops)")
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.boolOriginal")
+        # Incompatible objects are named and no operation is permitted.
+        page.evaluate("objects.push(txt('Label',5,5));selection(objects.map(o=>o.id));render()")
+        page.locator("#nxBooleanBtn").click()
+        assert "Not a native closed shape" in page.locator("#nxBoolSelection").inner_text()
+        assert page.locator("[data-bool=union]").is_disabled()
+        page.evaluate("closeModal()")
+        # Multiple subtractors, disjoint results and intersection use the same validated engine.
+        page.evaluate("""() => {
+            const a=rect(0,0,100,100,'#abcdef',0);
+            const b=rect(20,20,20,20,'#abcdef',0);
+            const c=rect(60,60,20,20,'#abcdef',0);
+            const out=nxBoolCombine('subtract',[a,b,c]);
+            const l=nxBoolNativeContours(out,false).loops;
+            if(!nxInside({x:10,y:10},l)||nxInside({x:30,y:30},l)||nxInside({x:70,y:70},l))throw Error('Subtract holes incorrect');
+            const inter=nxBoolCombine('intersect',[a,rect(10,10,80,80,'#abcdef',0),rect(20,20,20,20,'#abcdef',0)]);
+            if(!nxInside({x:30,y:30},nxBoolNativeContours(inter,false).loops))throw Error('Intersection missing');
+        }""")
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {

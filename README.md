@@ -14,6 +14,10 @@ v22.1 public preview · 27 November 2026
 
 The preview contains vector drawing and layout tools, editable paths and shapes, text and arrows, an icon editor, synthetic plot tools, local project import/export and 471 editable scientific illustrations: 329 molecular biology, 13 human organoids, 36 expanded cell atlas, 19 early progenitors, 17 original lineage illustrations, 34 embryogenesis illustrations and all 23 Carnegie stages. Molecular variants are grouped into families by default; enable **Show individual variants** for the complete count. Other unresolved private artwork, including laboratory essentials, branded instruments and legacy drawings, is excluded.
 
+## v23.4 — Combine shapes review
+
+Combine accepts 2–16 native paths or simple geometric shapes, with a per-object compatibility report and explicit opt-in closure for filled open paths. Union, sequential subtraction from the backmost shape, common intersection and odd-coverage exclusion produce native editable compound contours. The backmost object supplies style. Complete surviving Bézier spans retain their handles; clipped intersections remain polygonal approximations. The engine is bounded by segment and contour limits and rejects unsafe/empty results without modifying originals. Embedded shape labels are not carried over; compound illustrations must be opened for component editing. Undo restores the original objects.
+
 ## v23.3 — Figure colors review
 
 Figure colors inventories editable native paint slots in the selected artwork, current page or all pages. It supports nested native icon parts, solid fills, outlines, line colors, gradient stops, text/rich-text colors and highlights, fixed text-box colors and opt-in page backgrounds. Replace selected HEX colors simultaneously, filter by role, search source HEX, and compare before/after on a cloned page preview without touching live artwork. Locked/hidden objects, imported raster/SVG, plot/QC palettes and shared library originals are excluded. All-page replacements use separate undo history per affected page. This increment is color-only; global typography and line-width standardization are deferred.

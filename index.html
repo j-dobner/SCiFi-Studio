@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.3 — Figure color review</title>
+<title>SCiFi Studio v23.4 — Combine shapes review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.3 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.4 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -2933,9 +2933,136 @@ function nxGradient(){const a=selectedObjs().filter(o=>['path','shape','rect'].i
 // Curves are sampled before clipping; resulting contours are editable straight segments.
 function nxPoly(o){let out=[];if(o.type==='path'&&o.closed){for(const nodes of [o.nodes,...(o.otherContours||[])]){if(!pathNodesOk(nodes))continue;const a=[];for(let i=0;i<nodes.length;i++){const p=nodes[i],q=nodes[(i+1)%nodes.length],curved=Number.isFinite(p.outX)||Number.isFinite(q.inX),n=curved?Math.max(3,Math.min(28,Math.ceil(Math.hypot(q.x-p.x,q.y-p.y)/7))):1;for(let j=0;j<n;j++)a.push(nxWorld(o,curvePoint(p,q,j/n)))}out.push(a)}}else if(o.type==='rect'||o.type==='shape'){const div=document.createElementNS('http://www.w3.org/2000/svg','svg');div.innerHTML=nxBaseRenderObject(o,true);const el=div.querySelector('rect,ellipse,polygon,path');if(!el||['cube','cylinder'].includes(o.shapeKind))throw Error('Use closed paths or simple geometric shapes.');if(el.tagName==='polygon'){out.push(Array.from(el.points,p=>nxWorld(o,p)))}else if(el.tagName==='rect'&&!+el.getAttribute('rx')){out.push([[0,0],[o.w,0],[o.w,o.h],[0,o.h]].map(([x,y])=>nxWorld(o,{x,y})))}else if(el.tagName==='ellipse'){out.push(Array.from({length:96},(_,i)=>{const a=i*Math.PI*2/96;return nxWorld(o,{x:o.w/2*(1+Math.cos(a)),y:o.h/2*(1+Math.sin(a))})}))}else{const r=Math.min(o.radius||0,o.w/2,o.h/2);out.push(Array.from({length:4},(_,i)=>Array.from({length:13},(_,j)=>{const a=(i-1)*Math.PI/2+j*Math.PI/24;return nxWorld(o,{x:(i===0||i===1?o.w-r:r)+r*Math.cos(a),y:(i===1||i===2?o.h-r:r)+r*Math.sin(a)})})).flat())}}else throw Error('Select exactly two closed paths or geometric shapes.');return out.filter(a=>a.length>=3)}
 function nxInside(p,loops){let inside=false;for(const a of loops)for(let i=0,j=a.length-1;i<a.length;j=i++){const q=a[i],r=a[j];if((q.y>p.y)!==(r.y>p.y)&&p.x<(r.x-q.x)*(p.y-q.y)/(r.y-q.y)+q.x)inside=!inside}return inside}
-function nxBooleanGeometry(A,B,op){const cross=(a,b)=>a.x*b.y-a.y*b.x,sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}),dot=(a,b)=>a.x*b.x+a.y*b.y;const edges=loops=>loops.flatMap(a=>a.map((p,i)=>({p,q:a[(i+1)%a.length],t:[0,1]}))).filter(e=>Math.hypot(e.p.x-e.q.x,e.p.y-e.q.y)>1e-7);const a=edges(A),b=edges(B);if(a.length+b.length>2400)throw Error('Too many segments for this Boolean operation. Simplify the inputs.');for(const e of a)for(const f of b){const r=sub(e.q,e.p),s=sub(f.q,f.p),d=sub(f.p,e.p),den=cross(r,s);if(Math.abs(den)>1e-9){const t=cross(d,s)/den,u=cross(d,r)/den;if(t>=-1e-8&&t<=1+1e-8&&u>=-1e-8&&u<=1+1e-8){e.t.push(Math.max(0,Math.min(1,t)));f.t.push(Math.max(0,Math.min(1,u)))}}else if(Math.abs(cross(d,r))<1e-7){for(const p of [f.p,f.q]){const t=dot(sub(p,e.p),r)/dot(r,r);if(t>0&&t<1)e.t.push(t)}for(const p of [e.p,e.q]){const t=dot(sub(p,f.p),s)/dot(s,s);if(t>0&&t<1)f.t.push(t)}}}const test=p=>{const x=nxInside(p,A),y=nxInside(p,B);return op==='union'?x||y:op==='subtract'?x&&!y:op==='intersect'?x&&y:x!==y};const key=p=>`${Math.round(p.x*1e5)},${Math.round(p.y*1e5)}`,segments=new Map();for(const e of [...a,...b]){e.t.sort((x,y)=>x-y);for(let i=1;i<e.t.length;i++){if(e.t[i]-e.t[i-1]<1e-8)continue;let p=mix(e.p,e.q,e.t[i-1]),q=mix(e.p,e.q,e.t[i]),m=mix(p,q,.5),v=sub(q,p),L=Math.hypot(v.x,v.y),eps=Math.min(.0002,L*.01),l=test({x:m.x-v.y/L*eps,y:m.y+v.x/L*eps}),r=test({x:m.x+v.y/L*eps,y:m.y-v.x/L*eps});if(l===r)continue;if(!l)[p,q]=[q,p];const k=key(p)+'>'+key(q);segments.set(k,{p,q})}}const loops=[];while(segments.size){const [k,e]=segments.entries().next().value;segments.delete(k);const loop=[e.p];let end=e.q,limit=segments.size+2;while(key(end)!==key(loop[0])&&limit-->0){loop.push(end);const next=[...segments].filter(([_,s])=>key(s.p)===key(end));if(!next.length)throw Error('Ambiguous contour intersection. Try slightly separating tangent edges.');const [kk,v]=next[0];segments.delete(kk);end=v.q}if(key(end)!==key(loop[0]))throw Error('Could not close result');if(loop.length>=3){let simple=loop.filter((p,i)=>{const prev=loop[(i+loop.length-1)%loop.length],next=loop[(i+1)%loop.length],a=sub(p,prev),b=sub(next,p);return Math.abs(cross(a,b))>1e-6||dot(a,b)<0});if(simple.length<3)simple=loop;if(simple.length>250)throw Error('Result exceeds 250 nodes per contour; simplify shapes first.');loops.push(simple)}}return loops}
-function nxBoolean(op){const a=selectedObjs();if(a.length!==2){showToast('Select exactly two individual closed shapes (back minus front for Subtract)');return}try{const loops=nxBooleanGeometry(nxPoly(a[0]),nxPoly(a[1]),op);if(!loops.length){showToast('Empty result — original shapes retained');return}const pts=loops.flat(),x=Math.min(...pts.map(p=>p.x)),y=Math.min(...pts.map(p=>p.y)),w=Math.max(...pts.map(p=>p.x))-x,h=Math.max(...pts.map(p=>p.y))-y,nodes=loops.map(l=>l.map(p=>({x:p.x-x,y:p.y-y})));const first=a[0],o={id:uid(),type:'path',name:'Boolean '+op,x,y,w:Math.max(1,w),h:Math.max(1,h),nodes:nodes[0],otherContours:nodes.slice(1),closed:true,color:first.type==='path'?first.color:first.strokeColor||'#4a8593',strokeWidth:first.strokeWidth??2,fillColor:first.type==='path'?first.fillColor:first.fill||first.color,opacity:first.opacity??1,rotation:0};if(first.fillGradient)o.fillGradient=structuredClone(first.fillGradient);const ids=new Set(a.map(o=>o.id));transact(()=>{const idx=objects.indexOf(first);objects=objects.filter(o=>!ids.has(o.id));objects.splice(idx,0,o);selectOnly(o.id)});showToast('Editable Boolean contour created · Undo restores inputs')}catch(e){showToast(e.message)}}
-function nxBooleanMenu(){modal('<h2>Combine shapes</h2><p>Select two closed shapes. Subtract removes the front object from the back object. Curves are approximated with editable straight segments.</p><div class="actiongrid">'+['union','subtract','intersect','exclude'].map(s=>`<button class="btn" data-bool="${s}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')+'</div>');document.querySelectorAll('[data-bool]').forEach(b=>b.onclick=()=>{closeModal();nxBoolean(b.dataset.bool)})}
+function nxBooleanGeometry(A,B,op){const cross=(a,b)=>a.x*b.y-a.y*b.x,sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}),dot=(a,b)=>a.x*b.x+a.y*b.y;const edges=loops=>loops.flatMap(a=>a.map((p,i)=>({p,q:a[(i+1)%a.length],t:[0,1]}))).filter(e=>Math.hypot(e.p.x-e.q.x,e.p.y-e.q.y)>1e-7);const a=edges(A),b=edges(B);if(a.length+b.length>2400)throw Error('Too many segments for this Boolean operation. Simplify the inputs.');for(const e of a)for(const f of b){const r=sub(e.q,e.p),s=sub(f.q,f.p),d=sub(f.p,e.p),den=cross(r,s);if(Math.abs(den)>1e-9){const t=cross(d,s)/den,u=cross(d,r)/den;if(t>=-1e-8&&t<=1+1e-8&&u>=-1e-8&&u<=1+1e-8){e.t.push(Math.max(0,Math.min(1,t)));f.t.push(Math.max(0,Math.min(1,u)))}}else if(Math.abs(cross(d,r))<1e-7){for(const p of [f.p,f.q]){const t=dot(sub(p,e.p),r)/dot(r,r);if(t>0&&t<1)e.t.push(t)}for(const p of [e.p,e.q]){const t=dot(sub(p,f.p),s)/dot(s,s);if(t>0&&t<1)f.t.push(t)}}}const test=p=>{const x=nxInside(p,A),y=nxInside(p,B);return op==='union'?x||y:op==='subtract'?x&&!y:op==='intersect'?x&&y:x!==y};const key=p=>`${Math.round(p.x*1e5)},${Math.round(p.y*1e5)}`,segments=new Map();for(const e of [...a,...b]){e.t.sort((x,y)=>x-y);for(let i=1;i<e.t.length;i++){if(e.t[i]-e.t[i-1]<1e-8)continue;let p=mix(e.p,e.q,e.t[i-1]),q=mix(e.p,e.q,e.t[i]),m=mix(p,q,.5),v=sub(q,p),L=Math.hypot(v.x,v.y),eps=Math.min(.0002,L*.01),l=test({x:m.x-v.y/L*eps,y:m.y+v.x/L*eps}),r=test({x:m.x+v.y/L*eps,y:m.y-v.x/L*eps});if(l===r)continue;if(!l)[p,q]=[q,p];const k=key(p)+'>'+key(q);segments.set(k,{p,q})}}const loops=[];while(segments.size){const [k,e]=segments.entries().next().value;segments.delete(k);const loop=[e.p];let end=e.q,limit=segments.size+2;while(key(end)!==key(loop[0])&&limit-->0){loop.push(end);const next=[...segments].filter(([_,s])=>key(s.p)===key(end));if(!next.length)throw Error('Ambiguous contour intersection. Try slightly separating tangent edges.');const [kk,v]=next[0];segments.delete(kk);end=v.q}if(key(end)!==key(loop[0]))throw Error('Could not close result');if(loop.length>=3){let simple=loop.filter((p,i)=>{const prev=loop[(i+loop.length-1)%loop.length],next=loop[(i+1)%loop.length],a=sub(p,prev),b=sub(next,p);return Math.abs(cross(a,b))>1e-6||dot(a,b)<0});if(simple.length<3)simple=loop;if(simple.length>1200)throw Error('Intermediate contour is too complex; combine fewer shapes.');loops.push(simple)}}return loops}
+
+// Incremental Combine review: diagnose selection, close filled open paths explicitly,
+// use a bounded polygonal intersection engine and restore surviving complete cubic spans.
+function nxBoolCheck(o){
+ if(!o||o.hidden||o.locked)return {ok:false,reason:'Hidden or locked — unlock and show the object first.'};
+ if(o.type==='symbol')return {ok:false,reason:'Compound illustration — double-click it to edit its individual paths.'};
+ if(o.type==='path'){
+  if(!pathNodesOk(o.nodes)||[...(o.otherContours||[])].some(n=>!pathNodesOk(n)))return {ok:false,reason:'Invalid path nodes.'};
+  if(o.closed)return {ok:true,reason:'Closed editable path'};
+  if(/^#[a-f0-9]{6}$/i.test(o.fillColor||'')||nxPaint(o.fillGradient))return {ok:true,close:true,reason:'Filled open path — closing edge required'};
+  return {ok:false,reason:'Open unfilled path — close the contour in path editing first.'};
+ }
+ if(o.type==='rect'||o.type==='shape'){
+  if(['cube','cylinder'].includes(o.shapeKind))return {ok:false,reason:'Multi-surface shape — use a simple closed outline instead.'};
+  if(!(o.w>0&&o.h>0))return {ok:false,reason:'Shape has no positive area.'};
+  return {ok:true,reason:o.shapeLabel?'Closed shape (its embedded label will not be retained)':'Closed geometric shape'};
+ }
+ return {ok:false,reason:'Not a native closed shape or path. Text, arrows, plots and imported artwork cannot be clipped.'}
+}
+const nxBoolDist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const nxBoolMid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const nxBoolKey=p=>Math.round(p.x*1e5)+','+Math.round(p.y*1e5);
+function nxBoolSample(c){
+ const pts=[c[0]],flat=(p,a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,d=dx*dx+dy*dy;const u=d?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/d)):0;return Math.hypot(p.x-a.x-u*dx,p.y-a.y-u*dy)};
+ function split([a,b,c,d],depth){
+  if(depth>=9||(flat(b,a,d)<=.18&&flat(c,a,d)<=.18)){pts.push(d);return}
+  const ab=nxBoolMid(a,b),bc=nxBoolMid(b,c),cd=nxBoolMid(c,d),abc=nxBoolMid(ab,bc),bcd=nxBoolMid(bc,cd),m=nxBoolMid(abc,bcd);
+  split([a,ab,abc,m],depth+1);split([m,bcd,cd,d],depth+1)
+ }
+ split(c,0);return pts.filter((p,i)=>!i||nxBoolDist(p,pts[i-1])>1e-7)
+}
+function nxBoolNativeContours(o,closeOpen){
+ const curves=[],loops=[];
+ function loop(nodes,implicitClose=false){
+  const poly=[];
+  for(let i=0;i<nodes.length;i++){
+   const p=nodes[i],q=nodes[(i+1)%nodes.length],straight=implicitClose&&i===nodes.length-1;
+   const a=nxWorld(o,p),b=nxWorld(o,q),u=straight?a:nxWorld(o,{x:p.outX??p.x,y:p.outY??p.y}),v=straight?b:nxWorld(o,{x:q.inX??q.x,y:q.inY??q.y});
+   const c=[a,u,v,b],curved=!straight&&(nxBoolDist(a,u)>1e-7||nxBoolDist(b,v)>1e-7);
+   const pts=curved?nxBoolSample(c):[a,b];
+   if(pts.length>1){poly.push(...pts.slice(0,-1));if(curved&&pts.length>2)curves.push({c,pts})}
+  }
+  const clean=poly.filter((p,i)=>!i||nxBoolDist(p,poly[i-1])>1e-7);
+  if(clean.length>2&&nxBoolDist(clean[0],clean.at(-1))<1e-7)clean.pop();
+  if(clean.length<3)throw Error('A selected contour has no usable enclosed area.');
+  loops.push(clean)
+ }
+ if(o.type==='path'){
+  if(!o.closed&&!closeOpen)throw Error('Enable closure for filled open paths.');
+  loop(o.nodes,!o.closed);
+  for(const n of o.otherContours||[])loop(n);
+ }else if(o.type==='shape'&&['circle','ellipse'].includes(o.shapeKind)){
+  const x=o.w/2,y=o.h/2,k=.5522847498307936;
+  loop([{x:2*x,y,inX:2*x,inY:y-k*y,outX:2*x,outY:y+k*y},{x,y:2*y,inX:x+k*x,inY:2*y,outX:x-k*x,outY:2*y},{x:0,y,inX:0,inY:y+k*y,outX:0,outY:y-k*y},{x,y:0,inX:x-k*x,inY:0,outX:x+k*x,outY:0}])
+ }else if(o.type==='rect'&&o.radius>0){
+  const w=o.w,h=o.h,r=Math.min(o.radius,w/2,h/2),k=.5522847498307936*r;
+  loop([{x:r,y:0,inX:r-k,inY:0},{x:w-r,y:0,outX:w-r+k,outY:0},{x:w,y:r,inX:w,inY:r-k},{x:w,y:h-r,outX:w,outY:h-r+k},{x:w-r,y:h,inX:w-r+k,inY:h},{x:r,y:h,outX:r-k,outY:h},{x:0,y:h-r,inX:0,inY:h-r+k},{x:0,y:r,outX:0,outY:r-k}])
+ }else loops.push(...nxPoly(o));
+ if(!loops.length)throw Error('No usable closed contours.');
+ return {loops,curves}
+}
+function nxBoolRestoreCurves(loop,curves){
+ const n=loop.length,nodes=loop.map(p=>({x:p.x,y:p.y})),keys=loop.map(nxBoolKey),starts=new Map(),used=new Set(),removed=new Set();
+ keys.forEach((k,i)=>{if(!starts.has(k))starts.set(k,[]);starts.get(k).push(i)});
+ for(const trace of curves){
+  for(const reversed of [false,true]){
+   const pts=reversed?trace.pts.slice().reverse():trace.pts,c=reversed?trace.c.slice().reverse():trace.c;
+   if(pts.length>n)continue;
+   const target=pts.map(nxBoolKey);
+   for(const i of starts.get(target[0])||[]){
+    const edges=Array.from({length:pts.length-1},(_,j)=>(i+j)%n),end=(i+pts.length-1)%n;
+    if(edges.some(j=>used.has(j))||target.some((k,j)=>k!==keys[(i+j)%n]))continue;
+    // The full original segment survived clipping. Restore its exact cubic handles.
+    nodes[i].outX=c[1].x;nodes[i].outY=c[1].y;nodes[end].inX=c[2].x;nodes[end].inY=c[2].y;
+    edges.forEach(j=>used.add(j));for(let j=1;j<pts.length-1;j++)removed.add((i+j)%n);
+    break
+   }
+  }
+ }
+ const result=nodes.filter((_,i)=>!removed.has(i));
+ // At least two anchors are necessary for the native path format.
+ return result.length>=2?result:loop.map(p=>({x:p.x,y:p.y}))
+}
+function nxBoolCombine(op,items,closeOpen=false){
+ if(!['union','subtract','intersect','exclude'].includes(op))throw Error('Unknown Boolean operation.');
+ if(items.length<2||items.length>16)throw Error('Select 2–16 individual editable shapes.');
+ const data=items.map((o,i)=>{const check=nxBoolCheck(o);if(!check.ok||check.close&&!closeOpen)throw Error((i+1)+'. '+nxLayerName(o)+': '+check.reason);return nxBoolNativeContours(o,closeOpen)});
+ const curves=data.flatMap(v=>v.curves);let loops=data[0].loops;
+ for(const next of data.slice(1)){
+  if(!loops.length&&(op==='subtract'||op==='intersect'))break;
+  if(!loops.length)loops=next.loops;
+  else loops=nxBooleanGeometry(loops,next.loops,op)
+ }
+ if(!loops.length)throw Error('Empty result — original shapes retained.');
+ if(loops.length>101)throw Error('Result contains too many contours. Combine smaller groups.');
+ const restored=loops.map(l=>nxBoolRestoreCurves(l,curves));
+ if(restored.some(l=>!pathNodesOk(l)))throw Error('Result exceeds 250 nodes per contour. Combine fewer or simpler shapes.');
+ const pts=restored.flatMap(l=>l.flatMap(p=>[{x:p.x,y:p.y},...(Number.isFinite(p.inX)?[{x:p.inX,y:p.inY}]:[]),...(Number.isFinite(p.outX)?[{x:p.outX,y:p.outY}]:[])]));
+ const x=Math.min(...pts.map(p=>p.x)),y=Math.min(...pts.map(p=>p.y)),w=Math.max(...pts.map(p=>p.x))-x,h=Math.max(...pts.map(p=>p.y))-y;
+ if(![x,y,w,h].every(Number.isFinite)||w<=1e-7||h<=1e-7)throw Error('No valid enclosed result.');
+ const nodes=restored.map(l=>l.map(p=>{const n={x:p.x-x,y:p.y-y};for(const k of ['in','out'])if(Number.isFinite(p[k+'X'])){n[k+'X']=p[k+'X']-x;n[k+'Y']=p[k+'Y']-y}return n}));
+ const first=items[0],color=first.type==='path'?first.color:first.strokeColor||'#4a8593';
+ const o={id:uid(),type:'path',name:'Boolean '+op,x,y,w:Math.max(1,w),h:Math.max(1,h),nodes:nodes[0],otherContours:nodes.slice(1),closed:true,color,strokeColor:color,strokeWidth:first.strokeWidth??(first.type==='path'?3:2),fillColor:first.type==='path'?first.fillColor||'none':first.type==='rect'?first.fill||first.color:first.color,opacity:first.opacity??1,dashStyle:first.dashStyle||'solid',rotation:0};
+ if(nxPaint(first.fillGradient))o.fillGradient=structuredClone(first.fillGradient);
+ if(first.groupId&&items.every(v=>v.groupId===first.groupId&&JSON.stringify(v.groupStack||[])===JSON.stringify(first.groupStack||[]))){o.groupId=first.groupId;if(first.groupStack)o.groupStack=structuredClone(first.groupStack)}
+ return o
+}
+function nxBoolean(op,closeOpen=false){
+ const a=selectedObjs();
+ try{const o=nxBoolCombine(op,a,closeOpen),ids=new Set(a.map(v=>v.id));
+  transact(()=>{const idx=objects.indexOf(a[0]);objects=objects.filter(v=>!ids.has(v.id));objects.splice(idx,0,o);selectIndividual(o.id)});
+  showToast('Combined '+a.length+' shapes · editable path · Undo restores originals');return o
+ }catch(e){showToast(e.message);return null}
+}
+function nxBooleanMenu(){
+ const a=selectedObjs(),checks=a.map(nxBoolCheck),needsClose=checks.some(v=>v.close);
+ modal('<h2>Combine shapes</h2><p>Select 2–16 native shapes or paths. The backmost object supplies the result style. Subtract removes all front shapes from the backmost; Intersect keeps the common area; Exclude keeps regions covered an odd number of times.</p><div id="nxBoolSelection" class="nx-bool-selection"></div>'+(needsClose?'<label><input id="nxBoolCloseOpen" type="checkbox"> Close filled open paths using a straight closing edge</label><p class="hint">Only the result is closed. Original objects remain unchanged until you apply.</p>':'')+'<p id="nxBoolStatus" role="status"></p><div class="actiongrid">'+['union','subtract','intersect','exclude'].map(s=>'<button class="btn" data-bool="'+s+'">'+s[0].toUpperCase()+s.slice(1)+'</button>').join('')+'</div><p class="hint">Complete surviving Bézier segments retain their handles. Cut edges are approximated with short straight segments; exact curved intersections are not guaranteed. Labels embedded in geometric shapes are not retained. Undo restores the original artwork.</p>');
+ const list=$('#nxBoolSelection');
+ a.forEach((o,i)=>{const row=document.createElement('div');row.className='nx-bool-row';const title=document.createElement('strong');title.textContent=(i+1)+'. '+nxLayerName(o)+(i===0?' · backmost':'');const status=document.createElement('small');status.textContent=checks[i].reason;status.style.color=checks[i].ok&&!checks[i].close?'#52758b':'#9a5720';row.append(title,status);list.append(row)});
+ function update(){
+  const blocked=a.length<2||a.length>16||checks.some(v=>!v.ok),waiting=needsClose&&!$('#nxBoolCloseOpen')?.checked;
+  $('#nxBoolStatus').textContent=blocked?(a.length<2||a.length>16?'Select between 2 and 16 shapes.':'Resolve the incompatible objects listed above.'):waiting?'Confirm closure of filled open paths to continue.':a.length+' compatible objects ready.';
+  document.querySelectorAll('[data-bool]').forEach(b=>b.disabled=blocked||waiting)
+ }
+ if(needsClose)$('#nxBoolCloseOpen').onchange=update;
+ document.querySelectorAll('[data-bool]').forEach(b=>b.onclick=()=>{const result=nxBoolean(b.dataset.bool,!!$('#nxBoolCloseOpen')?.checked);if(result)closeModal()});
+ update()
+}
+const nxBoolCss=document.createElement('style');nxBoolCss.textContent='.nx-bool-selection{max-height:210px;overflow:auto;border:1px solid #d6e1ea;border-radius:6px;padding:4px 9px;margin:10px 0}.nx-bool-row{padding:7px 0;border-bottom:1px solid #e8eef3}.nx-bool-row:last-child{border-bottom:0}.nx-bool-row strong,.nx-bool-row small{display:block;overflow-wrap:anywhere}.nx-bool-row small{font-size:11px;margin-top:3px}';document.head.append(nxBoolCss);
 nxButton('nxBooleanBtn','Combine ▾',nxBooleanMenu);nxButton('nxGradientBtn','Fill…',nxGradient);
 const nxInspector208=renderInspector;renderInspector=function(){nxInspector208();const o=selectedObj();if(!o||o.type!=='path'||!o.otherContours?.length)return;const el=document.createElement('div');el.className='section';el.innerHTML=`<div class="section-title">Compound path · ${1+o.otherContours.length} contours</div><p>Choose another contour to edit its nodes. All contours share one fill.</p><select id="nxContour"><option value="">Active contour</option>${o.otherContours.map((_,i)=>`<option value="${i}">Switch to contour ${i+2}</option>`).join('')}</select>`;$('#inspector').append(el);el.querySelector('select').onchange=e=>{if(e.target.value==='')return;const i=+e.target.value;transact(()=>{[o.nodes,o.otherContours[i]]=[o.otherContours[i],o.nodes];activePathEditId=o.id;scifiSelectedNodeIndex=0})}};
 
