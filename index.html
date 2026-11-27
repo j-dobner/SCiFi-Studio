@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.7 — Precise transform review</title>
+<title>SCiFi Studio v23.8 — Publication panels review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.7 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.8 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -651,7 +651,7 @@ function activatePage(pageId){
 function appendPage(duplicate=false){
  closeTextEditor(true);storeCurrentPage();
  const current=activePage();const title=duplicate?current.name+' (copy)':'Untitled page';
- const p={id:'pg'+(++pageSerial),name:title,background:duplicate?pageBackground:'#ffffff',elements:duplicate?structuredClone(objects):[],guides:duplicate?uiGuideClean(activePage()?.guides):[],undos:[],redos:[]};
+ const p={id:'pg'+(++pageSerial),name:title,background:duplicate?pageBackground:'#ffffff',elements:duplicate?structuredClone(objects):[],guides:duplicate?uiGuideClean(activePage()?.guides):[],panelLayout:duplicate?uiPanelClean(current.panelLayout):null,undos:[],redos:[]};
  if(duplicate)for(const o of p.elements)o.id=uid();
  const idx=pages.findIndex(x=>x.id===activePageId);pages.splice(idx+1,0,p);
  activePageId=p.id;objects=structuredClone(p.elements);pageBackground=validPageColor(p.background);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground;undos=[];redos=[];pointer=null;selectOnly(null);render();updateHistory();showToast(duplicate?'Page duplicated':'Blank page added');
@@ -846,9 +846,9 @@ function scaledRectFromHandle(name,left,top,w,h,dx,dy,free){
 }
 function hitsMarquee(o,r){let b=bounds(o);return b.right>=r.left&&b.left<=r.right&&b.bottom>=r.top&&b.top<=r.bottom}
 function marqueeRect(p,q){return {left:Math.min(p.x,q.x),top:Math.min(p.y,q.y),right:Math.max(p.x,q.x),bottom:Math.max(p.y,q.y)}}
-function snapshot(){return JSON.stringify({elements:objects,background:pageBackground,selection:[...selectedIds]})}
-function restoreSnapshot(serialized){let data=JSON.parse(serialized);objects=Array.isArray(data)?data:data.elements||[];pageBackground=validPageColor(Array.isArray(data)?pageBackground:data.background);activePage().background=pageBackground;$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground}
-function pushHistory(before){const a=JSON.parse(before),b=JSON.parse(snapshot());if(JSON.stringify(a.elements??a)===JSON.stringify(b.elements??b)&&a.background===b.background)return;undos.push(before);if(undos.length>70)undos.shift();redos=[];updateHistory()}
+function snapshot(){return JSON.stringify({elements:objects,background:pageBackground,selection:[...selectedIds],panelLayout:uiPanelClean(activePage()?.panelLayout)})}
+function restoreSnapshot(serialized){let data=JSON.parse(serialized);objects=Array.isArray(data)?data:data.elements||[];pageBackground=validPageColor(Array.isArray(data)?pageBackground:data.background);activePage().background=pageBackground;if(!Array.isArray(data)&&Object.hasOwn(data,'panelLayout'))activePage().panelLayout=uiPanelClean(data.panelLayout);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground}
+function pushHistory(before){const a=JSON.parse(before),b=JSON.parse(snapshot());if(JSON.stringify(a.elements??a)===JSON.stringify(b.elements??b)&&a.background===b.background&&(!Object.hasOwn(a,'panelLayout')||JSON.stringify(a.panelLayout)===JSON.stringify(b.panelLayout)))return;undos.push(before);if(undos.length>70)undos.shift();redos=[];updateHistory()}
 function transact(fn){let before=snapshot();fn();pushHistory(before);render()}
 const shapeKinds=['rectangle','roundrect','circle','ellipse','parallelogram','diamond','triangle','pentagon','hexagon','star','cylinder','cube'];
 const fontFamilies=[['Inter,Segoe UI,Arial,sans-serif','Inter / Sans-serif'],['Arial,Helvetica,sans-serif','Arial'],['Georgia,serif','Georgia'],['Times New Roman,Times,serif','Times New Roman'],['Verdana,Geneva,sans-serif','Verdana'],['Trebuchet MS,Arial,sans-serif','Trebuchet MS'],['Courier New,Courier,monospace','Courier New'],['Tahoma,Arial,sans-serif','Tahoma']];
@@ -2061,7 +2061,7 @@ function renderCategories(){const categories=['All','My icons','Human Embryogene
 }
 
 function saveBlob(content,filename,mime){let blob=content instanceof Blob?content:new Blob([content],{type:mime}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
-function currentProjectData(){storeCurrentPage();return {version:10,app:'SCiFi',name:projectName,canvas:canvasSize(),activePageId,iconPacks:packRecords.map(p=>({...p})),customIcons:customAssets.map(a=>({...a})),pages:pages.map(p=>({id:p.id,name:p.name,background:validPageColor(p.background),elements:p.elements,guides:uiGuideClean(p.guides)})),elements:structuredClone(objects)}}
+function currentProjectData(){storeCurrentPage();return {version:10,app:'SCiFi',name:projectName,canvas:canvasSize(),activePageId,iconPacks:packRecords.map(p=>({...p})),customIcons:customAssets.map(a=>({...a})),pages:pages.map(p=>({id:p.id,name:p.name,background:validPageColor(p.background),elements:p.elements,guides:uiGuideClean(p.guides),panelLayout:uiPanelClean(p.panelLayout)})),elements:structuredClone(objects)}}
 function exportSVG(){let doc=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${canvasWidth} ${canvasHeight}" width="${formatPageUnit(canvasWidth,pageUnit)}${pageUnit}" height="${formatPageUnit(canvasHeight,pageUnit)}${pageUnit}">${svgDocument(true)}</svg>`;saveBlob(doc,(projectName||'figure').replace(/[^a-z0-9_-]/gi,'_')+'.svg','image/svg+xml;charset=utf-8');showToast('SVG exported — editable vectors')}
 function pngExportSize(dpi){
  if(!Number.isInteger(dpi)||dpi<1||dpi>2400)throw Error('Choose a whole-number resolution from 1 to 2400 DPI.');
@@ -2350,7 +2350,7 @@ async function loadProjectData(data){if(iconWorkspace)throw Error('Save or cance
  let allowed=new Set([...assets.map(a=>a.id),'arrow','text','rect','shape','qc-card','plot','path','symbol','reference']);
  const sanitize=items=>{const valid=items.filter(o=>o&&allowed.has(o.type)&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&(o.type!=='reference'||validDataImage(o.source)));const idMap=new Map(valid.map(o=>[o.id,uid()]));return valid.map(o=>({...o,id:idMap.get(o.id),color:['shape','rect','path'].includes(o.type)&&o.color==='none'?'none':/^#[0-9a-f]{6}$/i.test(o.color)?o.color:'#5576d9',text:String(o.text||'').slice(0,1500),label:String(o.label||'QC checkpoint').slice(0,120),detail:String(o.detail||'').slice(0,180),status:qcStates[o.status]?o.status:'not-assessed',shapeKind:shapeKinds.includes(o.shapeKind)?o.shapeKind:'ellipse',nodes:o.type==='path'&&pathNodesOk(o.nodes)?o.nodes.map(n=>({x:+n.x,y:+n.y,...(Number.isFinite(n.inX)?{inX:+n.inX,inY:+n.inY}:{}),...(Number.isFinite(n.outX)?{outX:+n.outX,outY:+n.outY}:{})})):undefined,closed:!!o.closed,fillColor:o.type==='path'&&/^#[0-9a-f]{6}$/i.test(o.fillColor)?o.fillColor:'none',fontFamily:validFontFamily(o.fontFamily),italic:!!o.italic,underline:!!o.underline,shapeLabel:String(o.shapeLabel||'').slice(0,180),removeWhite:!!o.removeWhite,x:Math.max(-10000,Math.min(10000,o.x)),y:Math.max(-10000,Math.min(10000,o.y)),w:Math.max(.1,Math.min(10000,Number.isFinite(+o.w)?+o.w:100)),h:Math.max(.1,Math.min(10000,Number.isFinite(+o.h)?+o.h:100)),plot:o.type==='plot'?sanitizedPlotOptions(o.plot):undefined,strokeWidth:Math.min(o.type==='path'?80:35,Math.max(0,Number.isFinite(+o.strokeWidth)?+o.strokeWidth:2)),strokeColor:o.strokeColor==='none'?'none':/^#[0-9a-f]{6}$/i.test(o.strokeColor)?o.strokeColor:undefined,dashStyle:strokeStyles.hasOwnProperty(o.dashStyle)?o.dashStyle:'solid',startHead:headStyles.includes(o.startHead)?o.startHead:'none',endHead:headStyles.includes(o.endHead)?o.endHead:'open',groupId:typeof o.groupId==='string'&&/^group-[a-z0-9-]{4,50}$/.test(o.groupId)?o.groupId:undefined,attachStart:o.type==='arrow'&&o.attachStart&&idMap.has(o.attachStart.id)?{id:idMap.get(o.attachStart.id),t:Math.max(0,Math.min(1,Number(o.attachStart.t)||0))}:undefined,attachEnd:o.type==='arrow'&&o.attachEnd&&idMap.has(o.attachEnd.id)?{id:idMap.get(o.attachEnd.id),t:Math.max(0,Math.min(1,Number(o.attachEnd.t)||0))}:undefined,branchTrunkId:o.type==='arrow'&&idMap.has(o.branchTrunkId)?idMap.get(o.branchTrunkId):undefined,branchCount:o.type==='arrow'&&Number.isFinite(+o.branchCount)&&o.branchCount>0?Math.max(1,Math.min(16,Math.round(+o.branchCount))):undefined,trunkShape:o.type==='arrow'&&o.trunkShape==='brace'?'brace':'straight',followParentTranslation:!!o.followParentTranslation}));};
    const cleanSymbols=items=>{for(const o of items){if(o.type==='symbol')o.children=nxCleanChildren(o.children);}};
-closeTextEditor(false);const sz=sanitizeCanvasSize(data.canvas?.width||1000,data.canvas?.height||640);pages=rawPages.map((p,i)=>({id:'pg'+(i+1),name:String(p.name||'Page '+(i+1)).slice(0,80),background:validPageColor(p.background),elements:sanitize(p.elements),guides:uiGuideClean(p.guides),undos:[],redos:[]}));pageSerial=pages.length;for(const p of pages)cleanSymbols(p.elements);
+closeTextEditor(false);const sz=sanitizeCanvasSize(data.canvas?.width||1000,data.canvas?.height||640);pages=rawPages.map((p,i)=>({id:'pg'+(i+1),name:String(p.name||'Page '+(i+1)).slice(0,80),background:validPageColor(p.background),elements:sanitize(p.elements),guides:uiGuideClean(p.guides),panelLayout:uiPanelClean(p.panelLayout),undos:[],redos:[]}));pageSerial=pages.length;for(const p of pages)cleanSymbols(p.elements);
  const matchIndex=rawPages.findIndex(p=>p.id===data.activePageId);activePageId=pages[Math.max(0,matchIndex)].id;objects=structuredClone(activePage().elements);pageBackground=validPageColor(activePage().background);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground;undos=[];redos=[];selectOnly(null);render();updateHistory();
  pageUnit=['px','mm','cm','in'].includes(data.canvas?.unit)?data.canvas.unit:'px';projectName=String(data.name||'Imported figure').slice(0,90);$('#projectName').value=projectName;setCanvasSize(sz.width,sz.height);renderCategories();renderAssets();showToast('Project loaded · '+pages.length+' page'+(pages.length>1?'s':''));
 }
@@ -4540,6 +4540,111 @@ renderInspector=function(){
  body.append(button)
 };
 const uiPreciseCss=document.createElement('style');uiPreciseCss.textContent='.ui-precise-anchor-row{display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:12px}.ui-precise-anchors{display:grid;grid-template-columns:repeat(3,25px);gap:3px}.ui-precise-anchors button{padding:0!important;width:25px;height:25px;display:grid;place-items:center}.ui-precise-anchors button span{width:5px;height:5px;background:#819caf;border-radius:50%}.ui-precise-anchors button.active span{background:#365e7a;width:8px;height:8px}';document.head.append(uiPreciseCss);
+
+/* Incremental publication layout: page-owned nonprinting guides, never rearrange artwork. */
+function uiPanelClean(raw){
+ if(!raw||!Array.isArray(raw.panels))return null;
+ const panels=raw.panels.slice(0,36).filter(p=>p&&['x','y','w','h'].every(k=>typeof p[k]==='number'&&Number.isFinite(p[k]))&&p.x>=0&&p.y>=0&&p.w>=.1&&p.h>=.1&&p.x+p.w<=5000.001&&p.y+p.h<=5000.001).map(p=>({x:p.x,y:p.y,w:p.w,h:p.h,label:String(p.label??'').slice(0,12)}));
+ return panels.length?{panels,visible:raw.visible!==false,snap:raw.snap===true}:null
+}
+function uiPanelLetter(i){let s='';for(i++;i>0;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s}
+function uiPanelGrid(cols,rows,mx,my,gx,gy){
+ if(!Number.isInteger(cols)||!Number.isInteger(rows)||cols<1||cols>6||rows<1||rows>6||![mx,my,gx,gy].every(v=>Number.isFinite(v)&&v>=0))throw Error('Choose 1–6 rows and columns, and nonnegative margins and gaps.');
+ const w=(canvasWidth-2*mx-(cols-1)*gx)/cols,h=(canvasHeight-2*my-(rows-1)*gy)/rows;
+ if(w<.1||h<.1)throw Error('Margins and gaps leave no room for panels.');
+ return Array.from({length:cols*rows},(_,i)=>({x:mx+(i%cols)*(w+gx),y:my+Math.floor(i/cols)*(h+gy),w,h,label:uiPanelLetter(i)}))
+}
+function uiPanelValidate(list){
+ if(!Array.isArray(list)||list.length>36)throw Error('Use up to 36 panels.');
+ for(const [i,p] of list.entries()){
+  if(!['x','y','w','h'].every(k=>Number.isFinite(p[k]))||p.x<0||p.y<0||p.w<.1||p.h<.1||p.x+p.w>canvasWidth+1e-7||p.y+p.h>canvasHeight+1e-7)throw Error('Panel '+(i+1)+' must have positive dimensions and fit on the page.')
+ }
+}
+function uiPanelMarkup(list,scale=1){
+ const sw=1/Math.max(.01,scale),fs=11/Math.max(.01,scale);
+ return '<g data-panel-guide="true" pointer-events="none" aria-hidden="true">'+list.map(p=>'<rect x="'+p.x+'" y="'+p.y+'" width="'+p.w+'" height="'+p.h+'" fill="none" stroke="#5288aa" stroke-width="'+sw+'" stroke-dasharray="'+4*sw+' '+3*sw+'"/>'+(p.label?'<text x="'+(p.x+4*sw)+'" y="'+(p.y+fs+3*sw)+'" font-size="'+fs+'" font-family="Arial,sans-serif" fill="#36647e" stroke="#ffffff" stroke-width="'+2*sw+'" paint-order="stroke">'+svgEsc(p.label)+'</text>':'')).join('')+'</g>'
+}
+function uiPanelCommit(layout,insert=false,size=12,pad=3){
+ if(iconWorkspace)throw Error('Finish icon editing first.');
+ uiPanelValidate(layout?.panels||[]);
+ const clean=uiPanelClean(layout),created=[];
+ if(insert){
+  if(!clean||!Number.isFinite(size)||size<4.5||size>120||!Number.isFinite(pad)||pad<0)throw Error('Choose valid label size and inset.');
+  const fs=size*96/72;
+  for(const p of clean.panels){
+   if(!p.label.trim())continue;
+   if(pad+fs*1.28>p.h||pad+p.label.length*fs*.7>p.w)throw Error('Label '+p.label+' may not fit. Reduce label size or inset.');
+   const o=txt(p.label,p.x+pad,p.y+pad,fs,'#26384a',700);o.fontFamily='Arial,Helvetica,sans-serif';o.publicationPanelLabel=true;created.push(o)
+  }
+  if(objects.length+created.length>5000)throw Error('Page capacity reached.')
+ }
+ transact(()=>{activePage().panelLayout=clean;if(created.length){objects.push(...created);selection(created.map(o=>o.id))}});
+ return created.length
+}
+const uiPanelSvgBase=svgDocument;svgDocument=function(exporting=false,sourceObjects=objects,background=pageBackground){
+ const content=uiPanelSvgBase(exporting,sourceObjects,background);
+ const layout=!exporting&&sourceObjects===objects&&!iconWorkspace?uiPanelClean(activePage()?.panelLayout):null;
+ if(!layout?.visible)return content;
+ return content+uiPanelMarkup(layout.panels.filter(p=>p.x+p.w<=canvasWidth+1e-7&&p.y+p.h<=canvasHeight+1e-7),zoom)
+};
+const uiPanelSnapBase=window.scifiGuideTargets;window.scifiGuideTargets=axis=>{
+ const targets=uiPanelSnapBase(axis),layout=!iconWorkspace?activePage()?.panelLayout:null;
+ if(!layout?.visible||!layout.snap)return targets;
+ const valid=layout.panels.filter(p=>p.x+p.w<=canvasWidth+1e-7&&p.y+p.h<=canvasHeight+1e-7);
+ return [...new Set([...targets,...valid.flatMap(p=>axis==='x'?[p.x,p.x+p.w]:[p.y,p.y+p.h])])]
+};
+function uiPanelDialog(){
+ if(iconWorkspace){showToast('Finish icon editing first');return}
+ closeTextEditor(true);
+ const previous=uiPanelClean(activePage()?.panelLayout);
+ let list=previous?structuredClone(previous.panels):[],unit=pageUnit==='px'?'mm':pageUnit,invalid=new Set();
+ const value=(n)=>Number((n/PAGE_FACTORS[unit]).toPrecision(10));
+ const defaults={mx:5*PAGE_FACTORS.mm,my:5*PAGE_FACTORS.mm,gx:3*PAGE_FACTORS.mm,gy:3*PAGE_FACTORS.mm};
+ modal('<h2>Publication panels</h2><p>Plan the figure with nonprinting panel guides. Existing artwork stays exactly where it is. Generate a grid, then adjust individual panel frames numerically.</p><div class="nx-grid"><label class="nx-field">Units<select id="uiPanelUnit">'+[['px','Pixels'],['mm','Millimeters'],['cm','Centimeters'],['in','Inches']].map(([v,n])=>'<option value="'+v+'" '+(v===unit?'selected':'')+'>'+n+'</option>').join('')+'</select></label>'+nxNum('uiPanelCols','Columns',2,1,6)+nxNum('uiPanelRows','Rows',2,1,6)+'</div><div class="nx-grid">'+[['mx','Left/right margin'],['my','Top/bottom margin'],['gx','Horizontal gap'],['gy','Vertical gap']].map(([k,n])=>nxNum('uiPanel-'+k,n,value(defaults[k]),0,5000,'any')).join('')+'</div><button class="btn" id="uiPanelGenerate">Generate equal grid</button><div class="ui-fig-color-preview" style="height:240px"><svg id="uiPanelPreview" xmlns="http://www.w3.org/2000/svg" aria-label="Panel layout preview"></svg></div><div id="uiPanelRowsList" class="ui-type-rows"></div><div class="actiongrid"><button class="btn small" id="uiPanelAdd">Add panel</button><button class="btn small" id="uiPanelClear">Clear layout</button></div><div class="nx-checks"><label><input id="uiPanelVisible" type="checkbox" checked> Show panel guides</label><label><input id="uiPanelSnap" type="checkbox"> Snap to panel edges</label><label><input id="uiPanelLabels" type="checkbox"> Insert editable panel labels</label></div><div class="nx-grid">'+nxNum('uiPanelLabelSize','Label size (pt)',12,4.5,120,'any')+nxNum('uiPanelInset','Label inset (mm)',2,0,100,'any')+'</div><p id="uiPanelStatus" role="status"></p><div class="actiongrid"><button class="btn primary" id="uiPanelApply">Apply layout</button><button class="btn" id="uiPanelCancel">Cancel</button></div><p class="hint">Guides and preview labels never export. Insert labels explicitly to create native text objects; they are independent of the guide layout and will not automatically move when it changes. Panel positions and sizes are saved per page; resizing the canvas does not rescale panels. Overlapping panels are allowed for inset figures.</p>');
+ $('#uiPanelVisible').checked=previous?.visible!==false;$('#uiPanelSnap').checked=previous?.snap===true;
+ const root=$('#uiPanelPreview');let frame=0;
+ function preview(){
+  if(!root.isConnected||$('#modalOverlay').classList.contains('hidden'))return;
+  let problem='';try{if(invalid.size)throw Error('Complete all numeric fields.');uiPanelValidate(list)}catch(e){problem=e.message}
+  uiFigureColorPreview(root,{items:objects,background:pageBackground},new Map(),new Set(),false);
+  if(!problem)root.insertAdjacentHTML('beforeend',uiPanelMarkup(list,Math.max(.01,Math.min(1,240/canvasHeight))));
+  $('#uiPanelStatus').textContent=problem||list.length+' panel guides · original artwork unchanged';
+  $('#uiPanelApply').disabled=!!problem
+ }
+ function schedule(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;preview()})}
+ function rows(){
+  const target=$('#uiPanelRowsList');target.replaceChildren();if(!list.length){target.textContent='No panels yet. Generate a grid or add a panel.';return}
+  list.forEach((p,i)=>{
+   const row=document.createElement('div');row.className='ui-panel-row';row.dataset.panelIndex=String(i);
+   const top=document.createElement('div');top.className='ui-panel-row-head';
+   const label=document.createElement('input');label.value=p.label;label.maxLength=12;label.setAttribute('aria-label','Panel '+(i+1)+' label');label.oninput=()=>{p.label=label.value;schedule()};
+   const del=document.createElement('button');del.type='button';del.className='btn small';del.textContent='Remove';del.onclick=()=>{list.splice(i,1);invalid.clear();rows();preview()};top.append(label,del);row.append(top);
+   const fields=document.createElement('div');fields.className='nx-grid';
+   for(const [k,n] of [['x','X'],['y','Y'],['w','Width'],['h','Height']]){
+    const l=document.createElement('label');l.className='nx-field';l.textContent=n+' ('+unit+')';
+    const f=document.createElement('input');f.type='number';f.step='any';f.value=value(p[k]);f.dataset.panelField=k;
+    f.oninput=()=>{const key=i+':'+k,v=f.valueAsNumber*PAGE_FACTORS[unit];if(!Number.isFinite(v))invalid.add(key);else{invalid.delete(key);p[k]=v}schedule()};l.append(f);fields.append(l)
+   }row.append(fields);target.append(row)
+  })
+ }
+ $('#uiPanelUnit').onchange=e=>{const old=unit;unit=e.target.value;for(const k of ['mx','my','gx','gy']){const f=$('#uiPanel-'+k);f.value=Number((f.valueAsNumber*PAGE_FACTORS[old]/PAGE_FACTORS[unit]).toPrecision(10))}invalid.clear();rows();preview()};
+ $('#uiPanelGenerate').onclick=()=>{try{list=uiPanelGrid($('#uiPanelCols').valueAsNumber,$('#uiPanelRows').valueAsNumber,...['mx','my','gx','gy'].map(k=>$('#uiPanel-'+k).valueAsNumber*PAGE_FACTORS[unit]));invalid.clear();rows();preview()}catch(e){$('#uiPanelStatus').textContent=e.message}};
+ $('#uiPanelAdd').onclick=()=>{if(list.length>=36){showToast('Maximum 36 panels');return}list.push({x:0,y:0,w:canvasWidth/2,h:canvasHeight/2,label:uiPanelLetter(list.length)});rows();preview()};
+ $('#uiPanelClear').onclick=()=>{list=[];invalid.clear();rows();preview()};
+ $('#uiPanelCancel').onclick=closeModal;
+ $('#uiPanelApply').onclick=()=>{try{
+  if(invalid.size)throw Error('Complete all numeric fields.');
+  const insert=$('#uiPanelLabels').checked;
+  if(insert&&objects.some(o=>o.publicationPanelLabel)&&!confirm('Existing panel labels are independent text objects. Insert another set?'))return;
+  const n=uiPanelCommit({panels:list,visible:$('#uiPanelVisible').checked,snap:$('#uiPanelSnap').checked},insert,$('#uiPanelLabelSize').valueAsNumber,$('#uiPanelInset').valueAsNumber*PAGE_FACTORS.mm);
+  closeModal();showToast((list.length?'Panel layout saved':'Panel layout cleared')+(n?' · '+n+' editable labels inserted':''))
+ }catch(e){$('#uiPanelStatus').textContent=e.message}};
+ rows();preview()
+}
+const uiPanelButton=nxButton('uiPanelBuilderBtn','Panel layout…',uiPanelDialog,$('#canvasSizeBtn').parentElement);
+uiPanelButton.title='Plan a publication figure using nonprinting panel guides';
+const uiPanelCss=document.createElement('style');uiPanelCss.textContent='.ui-panel-row{padding:8px 0;border-bottom:1px solid #d6e1ea}.ui-panel-row-head{display:flex;gap:8px;align-items:center;margin-bottom:6px}.ui-panel-row-head input{min-width:0;width:85px}.ui-panel-row .nx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}';document.head.append(uiPanelCss);
+
 render();
 
 nxFitAvailable();

@@ -579,6 +579,38 @@ with sync_playwright() as p:
             const c=line(50,60,90,90);c.attachStart={id:a.id,t:1};objects.push(c);render();
         }""")
         assert page.locator("#uiPreciseBtn").is_disabled()
+        # v23.8: panel layout is independent of artwork, nonprinting and undoable.
+        page.evaluate("""() => {
+            setCanvasSize(480,320);objects=[rect(20,30,50,40,'#abcdef',0)];selectOnly(null);render();
+            window.panelArtwork=JSON.stringify(objects)
+        }""")
+        page.locator("#uiPanelBuilderBtn").click()
+        page.locator("#uiPanelGenerate").click()
+        assert page.locator("[data-panel-index]").count() == 4
+        assert page.evaluate("JSON.stringify(objects)===window.panelArtwork")
+        page.locator("#uiPanelSnap").check()
+        page.locator("#uiPanelApply").click()
+        assert page.evaluate("activePage().panelLayout.panels.length") == 4
+        assert page.evaluate("JSON.stringify(objects)===window.panelArtwork")
+        assert page.locator("#stage [data-panel-guide]").count() == 1
+        assert page.evaluate("!svgDocument(true).includes('data-panel-guide')")
+        assert page.evaluate("currentProjectData().pages[0].panelLayout.panels.length") == 4
+        assert page.evaluate("window.scifiGuideTargets('x').includes(activePage().panelLayout.panels[0].x)")
+        page.evaluate("undo()")
+        assert page.evaluate("!activePage().panelLayout")
+        page.evaluate("redo()")
+        assert page.evaluate("activePage().panelLayout.panels.length") == 4
+        page.locator("#uiPanelBuilderBtn").click()
+        page.locator("#uiPanelLabels").check()
+        page.locator("#uiPanelApply").click()
+        assert page.evaluate("objects.filter(o=>o.publicationPanelLabel).map(o=>o.text)") == ["A","B","C","D"]
+        assert page.evaluate("JSON.stringify(objects.slice(0,1))===window.panelArtwork")
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.panelArtwork")
+        page.evaluate("appendPage(true)")
+        assert page.evaluate("activePage().panelLayout.panels.length") == 4
+        page.evaluate("activatePage(pages[0].id);pages=pages.filter(p=>p.id===activePageId);render()")
+        page.evaluate("uiPanelCommit(null)")
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {
