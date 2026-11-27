@@ -283,68 +283,6 @@ with sync_playwright() as p:
         assert page.locator("#scifiRepeatMode").input_value() == "auto"
         assert page.locator("#uiLibSize").input_value() == "normal"
         assert page.locator("#nxToggle-pages").get_attribute("aria-expanded") == "true"
-        # Publication tools: native formatting, panel labels, lossless export and recovery.
-        page.wait_for_function("() => uiRecoveryReady")
-        if page.evaluate("!!uiRecoveryPending"):
-            page.locator("#uiRecoveryBtn").click()
-            page.once("dialog", lambda dialog: dialog.accept())
-            page.locator("#uiRecDiscard").click()
-            page.wait_for_function("() => !uiRecoveryPending")
-        page.evaluate("setCanvasSize(480,320); objects=[]; selectOnly(null); render()")
-        page.evaluate("uiPubPanelGrid({cols:2,rows:2,margin:10,gap:10,fontPx:16,arrange:false})")
-        assert page.evaluate("objects.filter(o=>o.publicationPanelLabel).map(o=>o.text)") == ["A","B","C","D"]
-        page.evaluate("uiPubFormatApply({fontPx:20,strokePx:1},'page')")
-        assert page.evaluate("objects.filter(o=>o.type==='text').every(o=>o.fontSize===20)")
-        page.evaluate("selectOnly(objects.find(o=>o.type==='text').id);render();uiPubCopyStyle()")
-        page.evaluate("selectOnly(objects.filter(o=>o.type==='text')[1].id);render();uiPubApplyStyle()")
-        assert page.evaluate("selectedObj().fontSize") == 20
-        page.evaluate("uiPubPhysicalDialog()")
-        page.locator("#uiPosUnit").select_option("mm")
-        page.locator("#uiPosX").fill("10")
-        page.locator("#uiPosApply").click()
-        assert abs(page.evaluate("selectedObj().x")-96*10/25.4)<.001
-        assert page.evaluate("uiPubPreflight({dpi:300,font:20,stroke:.5}).some(v=>v.message.includes('Text'))")
-        page.evaluate("setCanvasSize(96,96)")
-        import struct
-        with page.expect_download() as exported:
-            page.evaluate("uiPubExport('tiff',96)")
-        data=Path(exported.value.path()).read_bytes()
-        assert data[:4] == bytes([73,73,42,0])
-        ifd=struct.unpack_from("<I",data,4)[0]
-        tags={struct.unpack_from("<H",data,ifd+2+i*12)[0]:struct.unpack_from("<HHII",data,ifd+2+i*12)[1:] for i in range(struct.unpack_from("<H",data,ifd)[0])}
-        assert tags[256][2] == tags[257][2] == 96
-        assert struct.unpack_from("<II",data,tags[282][2]) == (96,1)
-        assert tags[279][2] == 96*96*3
-        with page.expect_download() as exported:
-            page.evaluate("uiPubExport('pdf',96)")
-        data=Path(exported.value.path()).read_bytes()
-        assert data.startswith(b"%PDF-1.4") and b"/MediaBox [0 0 72 72]" in data
-        start=int(data.split(b"startxref"+bytes([10]))[-1].splitlines()[0])
-        assert data[start:start+4] == b"xref"
-        # Use a real local raster asset and verify the source survives editing and recovery.
-        page.evaluate("""async () => {
-            const c=document.createElement('canvas');c.width=40;c.height=20;
-            const ctx=c.getContext('2d');ctx.fillStyle='#7799bb';ctx.fillRect(0,0,40,20);
-            const blob=await new Promise(r=>c.toBlob(r,'image/png'));
-            const a=await readCustomIcon(new File([blob],'test-image.png',{type:'image/png'}));
-            registerCustomAsset(a);addAsset(a.id,48,48);
-            const o=selectedObj();window.testOriginalImage=a.source;
-            transact(()=>uiPubImageApply(o,a,{x:4,y:2,w:20,h:10,brightness:0,contrast:1,umPerPixel:1,barUm:5,barColor:'white'}));
-        }""")
-        assert page.evaluate("selectedObj().imageView.w") == 20
-        assert page.evaluate("byId[selectedObj().type].source === window.testOriginalImage")
-        assert page.evaluate("svgDocument(true).includes('ui-microscopy-bar')")
-        assert page.evaluate("uiPubPreflight({dpi:300,font:8,stroke:.5}).some(v=>v.message.includes('effective DPI'))")
-        page.wait_for_function("() => uiRecoveryReady && !uiRecoveryBusy")
-        assert page.evaluate("uiRecoverySave(true)")
-        assert page.evaluate("async () => (await uiRecoveryStore('readonly',s=>s.get(uiRecoveryKey))).project.pages.length") == 1
-        page.reload()
-        page.wait_for_function("() => uiRecoveryReady && !!uiRecoveryPending")
-        page.locator("#uiRecoveryBtn").click()
-        page.once("dialog", lambda dialog: dialog.accept())
-        page.locator("#uiRecRestore").click()
-        page.wait_for_function("() => !uiRecoveryPending")
-        assert page.evaluate("objects.some(o=>o.imageView?.w===20 && !!byId[o.type]?.source)")
         assert not errors, errors
         page.close()
     browser.close()

@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.6 — Publication tools review</title>
+<title>SCiFi Studio v23 — Workspace preferences review 7</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.6 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 7</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -1079,7 +1079,7 @@ function renderObject(o,exporting=false){const cx=(o.w||0)/2,cy=(o.h||0)/2;
  if(o.type==='symbol'){inside=symbolSvg(o)}
  else if(byId[o.type]){let a=byId[o.type];
   if(a.uploaded&&a.kind==='svg')inside=`<g style="color:${svgEsc(validColor(o.color))}"><svg x="0" y="0" width="${o.w}" height="${o.h}" viewBox="${svgEsc(a.viewBox)}" preserveAspectRatio="none">${a.svgMarkup}</svg></g>`;
-  else if(a.uploaded&&a.kind==='raster')inside=o.imageView?uiPubRasterMarkup(o,a):`<image x="0" y="0" width="${o.w}" height="${o.h}" preserveAspectRatio="none" href="${a.source}"/>`;
+  else if(a.uploaded&&a.kind==='raster')inside=`<image x="0" y="0" width="${o.w}" height="${o.h}" preserveAspectRatio="none" href="${a.source}"/>`;
   else inside=`<g transform="scale(${(o.w||100)/100} ${(o.h||100)/100})" style="color:${svgEsc(o.color)};--pale:${pale(o.color)}">${a.svg}</g>`
   if(o.removeWhite)inside=`<g filter="url(#scifiWhiteKnockout)">${inside}</g>`;
  }
@@ -3590,210 +3590,6 @@ function uiWorkspaceDialog(){
 }
 const uiWorkspaceButton=nxButton('uiWorkspacePrefs','Preferences',uiWorkspaceDialog,nx207Actions);uiWorkspaceButton.title='Workspace preferences and reset layout';uiWorkspaceButton.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/><circle cx="10" cy="18" r="2" fill="white"/></svg><span>Preferences</span>';
 const uiWorkspaceStored=uiWorkspaceRead();if(uiWorkspaceStored)uiWorkspaceApply(uiWorkspaceStored);
-
-/* v23.1–23.6 publication workflow. No external dependencies or network access. */
-const uiPubClamp=(v,min,max,fallback=min)=>Number.isFinite(+v)?Math.max(min,Math.min(max,+v)):fallback;
-function uiPubNum(id){return $('#'+id).valueAsNumber}
-function uiPubField(id,label,value,min,max,step='any'){return '<label class="nx-field">'+svgEsc(label)+'<input type="number" id="'+id+'" value="'+value+'" min="'+min+'" max="'+max+'" step="'+step+'"></label>'}
-function uiPubSelect(id,label,items,value){return '<label class="nx-field">'+svgEsc(label)+'<select id="'+id+'">'+items.map(([v,n])=>'<option value="'+svgEsc(v)+'" '+(String(v)===String(value)?'selected':'')+'>'+svgEsc(n)+'</option>').join('')+'</select></label>'}
-function uiPubWalk(items,fn,scaleX=1,scaleY=1,root=null,depth=0){if(!Array.isArray(items)||depth>8)return;for(const o of items){if(!o||o.hidden||o.type==='reference')continue;fn(o,scaleX,scaleY,root||o);if(o.type==='symbol')uiPubWalk(o.children,fn,scaleX*Math.abs(o.w/Math.max(1,o.sourceW)),scaleY*Math.abs(o.h/Math.max(1,o.sourceH)),root||o,depth+1)}}
-function uiPubEditable(o){return o&&!o.locked&&!o.hidden&&o.type!=='reference'}
-function uiPubHasStroke(o){return ['shape','rect','path','arrow'].includes(o.type)&&(o.type==='path'||o.type==='arrow'?o.color!=='none':o.strokeColor!=='none')&&(o.strokeWidth??2)>0}
-function uiPubFileName(suffix){return projectFileName(projectName).replace(/\.json$/i,'')+suffix}
-function uiPubSafe(fn){try{fn()}catch(e){showToast(e.message||'Unable to apply this operation')}}
-/* 23.1: local recovery, non-destructive single-object format painter. */
-const uiRecoveryDB='SCiFi-Studio-recovery-v1',uiRecoveryKey='latest';
-let uiRecoveryPending=null,uiRecoveryReady=false,uiRecoveryBusy=false,uiRecoveryLast='',uiRecoveryStatus='Checking local storage…',uiRecoveryTimer=0;
-function uiRecoveryStore(mode,action){
- return new Promise((resolve,reject)=>{
-  if(!window.indexedDB){reject(Error('IndexedDB unavailable'));return}
-  const req=indexedDB.open(uiRecoveryDB,1);
-  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('drafts'))req.result.createObjectStore('drafts')};
-  req.onerror=()=>reject(req.error);req.onblocked=()=>reject(Error('Recovery storage blocked'));
-  req.onsuccess=()=>{const db=req.result;let tx,op;try{tx=db.transaction('drafts',mode);op=action(tx.objectStore('drafts'))}catch(e){db.close();reject(e);return}tx.oncomplete=()=>{const result=op?.result;db.close();resolve(result)};tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||Error('Recovery storage failed'))}};
- });
-}
-function uiRecoveryBadge(){const b=$('#uiRecoveryBtn');if(b){b.textContent=uiRecoveryPending?'Recover draft…':'Recovery';b.classList.toggle('active',!!uiRecoveryPending);b.title=uiRecoveryStatus}}
-async function uiRecoveryInit(){
- try{const saved=await uiRecoveryStore('readonly',s=>s.get(uiRecoveryKey));uiRecoveryPending=saved?.project?.app==='SCiFi'?saved:null;uiRecoveryLast=JSON.stringify(currentProjectData());uiRecoveryStatus=uiRecoveryPending?'A previous local recovery draft is available':'Local recovery ready';uiRecoveryReady=true}
- catch(e){uiRecoveryStatus='Recovery storage unavailable; save project files manually'}uiRecoveryBadge()
-}
-async function uiRecoverySave(force=false){
- if(!uiRecoveryReady||uiRecoveryBusy||uiRecoveryPending||iconWorkspace||textEditor||pointer||projectSavePending)return false;
- uiRecoveryBusy=true;
- try{const project=currentProjectData(),serialized=JSON.stringify(project);if(!force&&serialized===uiRecoveryLast)return false;
-  if(serialized.length>60*1024*1024)throw Error('Recovery draft exceeds the local safety limit');
-  await uiRecoveryStore('readwrite',s=>s.put({at:new Date().toISOString(),project},uiRecoveryKey));uiRecoveryLast=serialized;uiRecoveryStatus='Local recovery saved at '+new Date().toLocaleTimeString();return true
- }catch(e){uiRecoveryStatus='Local recovery failed: '+(e.message||'storage error')+'; save your project manually';return false}
- finally{uiRecoveryBusy=false;uiRecoveryBadge()}
-}
-function uiRecoverySchedule(){if(!uiRecoveryReady||uiRecoveryPending)return;clearTimeout(uiRecoveryTimer);uiRecoveryTimer=setTimeout(()=>uiRecoverySave(),3500)}
-function uiRecoveryDialog(){
- const pending=uiRecoveryPending;
- modal('<h2>Local recovery</h2><p id="uiRecStatus"></p><p>SCiFi writes a recovery checkpoint after edits, using this browser’s IndexedDB. This is not a substitute for saving a project file. The previous checkpoint is protected until you recover or discard it. Unfinished rich-text and icon-editing sessions are not checkpointed.</p><div class="actiongrid"><button class="btn primary" id="uiRecRestore">Recover previous draft</button><button class="btn" id="uiRecDiscard">Discard previous draft</button><button class="btn" id="uiRecSave">Checkpoint now</button><button class="btn" id="uiRecDownload">Download recovery JSON</button></div><p class="hint">Private browsing, file renaming and browser storage limits may affect availability. Only the latest checkpoint is retained.</p>');
- $('#uiRecStatus').textContent=pending?'Previous draft: '+pending.project.name+' · '+pending.at:uiRecoveryStatus;
- $('#uiRecRestore').disabled=!pending;$('#uiRecDiscard').disabled=!pending;$('#uiRecSave').disabled=!!pending||!uiRecoveryReady;$('#uiRecDownload').disabled=!uiRecoveryReady;
- $('#uiRecRestore').onclick=async()=>{if(!pending||!confirm('Replace the current workspace with this recovery draft? Save current work first.'))return;try{closeModal();await loadProjectData(pending.project);uiRecoveryPending=null;uiRecoveryLast=JSON.stringify(currentProjectData());uiRecoveryStatus='Recovery restored; save the editable project';uiRecoveryBadge();showToast('Recovery draft restored')}catch(e){showToast(e.message)}};
- $('#uiRecDiscard').onclick=async()=>{if(!confirm('Discard the previous local recovery checkpoint?'))return;try{await uiRecoveryStore('readwrite',s=>s.delete(uiRecoveryKey));uiRecoveryPending=null;uiRecoveryLast=JSON.stringify(currentProjectData());uiRecoveryStatus='Previous checkpoint discarded';uiRecoveryBadge();closeModal()}catch(e){showToast('Could not discard recovery checkpoint')}};
- $('#uiRecSave').onclick=async()=>{await uiRecoverySave(true);$('#uiRecStatus').textContent=uiRecoveryStatus};
- $('#uiRecDownload').onclick=async()=>{try{const saved=uiRecoveryPending||await uiRecoveryStore('readonly',s=>s.get(uiRecoveryKey));if(!saved)throw Error('No recovery checkpoint yet');saveBlob(JSON.stringify(saved.project,null,2),'SCiFi-recovery.json','application/json')}catch(e){showToast(e.message)}};
-}
-let uiPubPaint=null;
-function uiPubPaintKind(o){return ['shape','rect'].includes(o.type)?'shape':o.type}
-const uiPubStyleKeys={text:['color','fontFamily','fontSize','fontWeight','italic','underline','opacity','textAlign','textLineHeight'],shape:['color','fill','strokeColor','strokeWidth','dashStyle','opacity','fillGradient','labelColor'],path:['color','strokeColor','strokeWidth','dashStyle','fillColor','fillGradient','opacity'],arrow:['color','strokeWidth','dashStyle','startHead','endHead','opacity']};
-function uiPubCopyStyle(){const o=selectedObj(),keys=uiPubStyleKeys[uiPubPaintKind(o||{})];if(!o||!keys||!uiPubEditable(o))throw Error('Select one editable text, shape or line/path to copy its style');uiPubPaint={kind:uiPubPaintKind(o),style:Object.fromEntries(keys.map(k=>[k,structuredClone(o[k])]))};showToast('Appearance copied · select matching targets and Apply style')}
-function uiPubApplyStyle(){if(!uiPubPaint)throw Error('Copy a style first');const targets=selectedObjs().filter(o=>uiPubEditable(o)&&uiPubPaintKind(o)===uiPubPaint.kind);if(!targets.length)throw Error('Select compatible target objects');
- transact(()=>{for(const o of targets){for(const [k,v] of Object.entries(uiPubPaint.style)){if(v===undefined)delete o[k];else o[k]=structuredClone(v)}if(o.type==='rect'&&uiPubPaint.style.fill===undefined)o.fill=o.color;if(o.type==='shape'&&uiPubPaint.style.fill)o.color=uiPubPaint.style.fill;
- if(o.type==='text'){const keys=Object.keys(uiPubPaint.style);o.richRuns=(o.richRuns||[]).map(r=>{const style={...r.style};for(const k of keys)delete style[k];return {...r,style}}).filter(r=>Object.keys(r.style).length);scifiUpdateTextGeometry(o)}}});showToast('Appearance applied to '+targets.length+' objects')}
-/* 23.2: figure formatting, physical-unit transform. */
-function uiPubColorKeys(o){if(o.type==='text')return ['color','textBoxBgColor','textBoxBorderColor'];if(o.type==='path')return ['color','strokeColor','fillColor'];if(o.type==='shape'||o.type==='rect')return ['color','fill','strokeColor','labelColor'];if(o.type==='arrow')return ['color'];const a=byId[o.type];return a&&!a.uploaded||a?.recolorable?['color']:[]}
-function uiPubFormatObjects(items,settings){
- let changed=0;uiPubWalk(items,(o,sx,sy,root)=>{if(!uiPubEditable(o)||!uiPubEditable(root))return;let edited=false;
- const set=(obj,k,v)=>{if(obj[k]!==v){obj[k]=v;edited=true}};
- if(settings.from&&settings.to){const match=v=>typeof v==='string'&&v.toLowerCase()===settings.from.toLowerCase();for(const k of uiPubColorKeys(o))if(match(o[k]))set(o,k,settings.to);
- if(o.fillGradient?.stops)for(const stop of o.fillGradient.stops)if(match(stop.color))set(stop,'color',settings.to);
- if(o.type==='text')for(const run of o.richRuns||[])for(const k of ['color','highlight'])if(match(run.style?.[k]))set(run.style,k,settings.to)}
- if(o.type==='text'&&(settings.font||settings.fontPx)){
-  if(settings.font)set(o,'fontFamily',settings.font);if(settings.fontPx)set(o,'fontSize',settings.fontPx);
-  for(const run of o.richRuns||[]){if(!run.style)continue;if(settings.font&&'fontFamily' in run.style){delete run.style.fontFamily;edited=true}if(settings.fontPx&&'fontSize' in run.style){delete run.style.fontSize;edited=true}}if(edited)scifiUpdateTextGeometry(o)
- }
- if(settings.strokePx!=null&&uiPubHasStroke(o))set(o,'strokeWidth',settings.strokePx);
- if(edited)changed++;
- });return changed
-}
-function uiPubFormatApply(settings,scope){
- closeTextEditor(true);storeCurrentPage();let count=0;
- if(scope==='all')for(const p of pages){if(p.id===activePageId)continue;const before=JSON.stringify({elements:p.elements,background:p.background,selection:[]});const n=uiPubFormatObjects(p.elements,settings);count+=n;if(n){p.undos=[...(p.undos||[]),before].slice(-30);while(p.undos.length>1&&p.undos.reduce((sum,v)=>sum+v.length,0)>24*1024*1024)p.undos.shift();p.redos=[]}}
- transact(()=>{count+=uiPubFormatObjects(scope==='selection'?selectedObjs():objects,settings)});storeCurrentPage();showToast('Updated '+count+' editable objects'+(scope==='all'?' · undo separately on each page':''));
-}
-function uiPubFormatDialog(){
- modal('<h2>Figure formatting</h2><p>Modify native object styles, including nested editable icon parts. Fixed colors embedded in source SVG artwork and experimental raster pixels are not rewritten. All-page changes have separate undo history on each page.</p>'+uiPubSelect('uiFmtScope','Scope',[['selection','Selection'],['page','Current page'],['all','All pages']],selectedIds.size?'selection':'page')+'<div class="nx-checks"><label><input id="uiFmtReplace" type="checkbox"> Replace a color</label></div><div class="nx-grid"><label class="nx-field">Find color<input id="uiFmtFrom" type="color" value="#5576d9"></label><label class="nx-field">Replacement<input id="uiFmtTo" type="color" value="#527e97"></label></div>'+uiPubSelect('uiFmtFont','Font family',[['','Keep current'],...fontFamilies],'')+'<div class="nx-checks"><label><input id="uiFmtFontOn" type="checkbox"> Standardize text size</label><label><input id="uiFmtStrokeOn" type="checkbox"> Standardize visible line widths</label></div><div class="nx-grid">'+uiPubField('uiFmtFontSize','Text size (pt)',10,3,120)+uiPubField('uiFmtStroke','Line width (pt)',.75,.1,20)+'</div><button class="btn primary" id="uiFmtApply">Apply formatting</button>');
- $('#uiFmtApply').onclick=()=>uiPubSafe(()=>{const settings={from:$('#uiFmtReplace').checked?$('#uiFmtFrom').value:null,to:$('#uiFmtTo').value,font:$('#uiFmtFont').value,fontPx:$('#uiFmtFontOn').checked?uiPubClamp(uiPubNum('uiFmtFontSize'),3,120)*96/72:null,strokePx:$('#uiFmtStrokeOn').checked?uiPubClamp(uiPubNum('uiFmtStroke'),.1,20)*96/72:null};const scope=$('#uiFmtScope').value;if(scope==='selection'&&!selectedIds.size)throw Error('Select objects first');closeModal();uiPubFormatApply(settings,scope)})
-}
-function uiPubScale(o,sx,sy){const old=structuredClone(o);if(o.type==='arrow'){o.x2=o.x+(old.x2-old.x)*sx;o.y2=o.y+(old.y2-old.y)*sy;o.w=Math.abs(o.x2-o.x);o.h=Math.abs(o.y2-o.y)}else{scaleObjectFree(o,old,sx,sy);if(o.type==='text'&&o.textBoxMode!=='fixed'){for(const run of o.richRuns||[])if(Number.isFinite(run.style?.fontSize))run.style.fontSize=Math.max(4,run.style.fontSize*sy)}}}
-function uiPubPhysicalDialog(){
- const o=selectedObj();if(!uiPubEditable(o)||o.type==='arrow')throw Error('Select one non-line object');let unit=pageUnit,old={x:o.x,y:o.y,w:o.w,h:o.h},factor=()=>PAGE_FACTORS[unit];
- const fields=[['X','X position','x'],['Y','Y position','y'],['W','Width','w'],['H','Height','h']];
- modal('<h2>Precise object placement</h2><p>Position and size refer to the unrotated object frame. 96 design pixels = 1 inch.</p>'+uiPubSelect('uiPosUnit','Units',[['px','Pixels'],['mm','Millimeters'],['cm','Centimeters'],['in','Inches']],unit)+'<div class="nx-grid">'+fields.map(([id,label,k])=>uiPubField('uiPos'+id,label,Number((old[k]/factor()).toFixed(4)),-10000,10000)).join('')+'</div><label><input type="checkbox" id="uiPosRatio" checked> Maintain aspect ratio</label><p></p><button class="btn primary" id="uiPosApply">Apply dimensions</button>');
- $('#uiPosUnit').onchange=e=>{const f=factor();unit=e.target.value;for(const [id] of fields){const field=$('#uiPos'+id);field.value=Number((field.valueAsNumber*f/factor()).toFixed(4))}};
- $('#uiPosW').oninput=()=>{if($('#uiPosRatio').checked)$('#uiPosH').value=Number((uiPubNum('uiPosW')*old.h/old.w).toFixed(4))};$('#uiPosH').oninput=()=>{if($('#uiPosRatio').checked)$('#uiPosW').value=Number((uiPubNum('uiPosH')*old.w/old.h).toFixed(4))};
- $('#uiPosApply').onclick=()=>uiPubSafe(()=>{const [x,y,w,h]=fields.map(([id])=>uiPubNum('uiPos'+id)*factor());if(![x,y,w,h].every(Number.isFinite)||w<.1||h<.1||w>10000||h>10000||Math.abs(x)>10000||Math.abs(y)>10000)throw Error('Enter valid coordinates and positive dimensions');closeModal();transact(()=>{uiPubScale(o,w/old.w,h/old.h);o.x=x;o.y=y})})
-}
-/* 23.3: panel grid and journal widths. */
-function uiPubPanelUnits(){const out=[],seen=new Set();for(const o of selectedObjs()){if(!uiPubEditable(o))continue;const key=o.groupId||o.id;if(seen.has(key))continue;seen.add(key);out.push(o.groupId?objects.filter(v=>v.groupId===o.groupId&&uiPubEditable(v)):[o])}return out.sort((a,b)=>nxBounds(a).top-nxBounds(b).top||nxBounds(a).left-nxBounds(b).left)}
-function uiPubPanelGrid(config){
- const cols=Math.round(config.cols),rows=Math.round(config.rows),margin=config.margin,gap=config.gap,fs=config.fontPx;
- if(![cols,rows,margin,gap,fs].every(Number.isFinite)||cols<1||cols>6||rows<1||rows>6||margin<0||gap<0||fs<4)throw Error('Choose a valid grid');
- const cellW=(canvasWidth-2*margin-(cols-1)*gap)/cols,cellH=(canvasHeight-2*margin-(rows-1)*gap)/rows;
- if(cellW<25||cellH<fs*2+10)throw Error('Grid is too small for the selected margins and labels');
- const units=config.arrange?uiPubPanelUnits():[];if(config.arrange&&!units.length)throw Error('Select objects or groups first');if(units.length>cols*rows)throw Error('Not enough panels for the selected groups/objects');
- const count=config.arrange?units.length:cols*rows,created=[];
- if(objects.length+count*2>5000)throw Error('Page capacity reached');
- if(config.arrange){const groups=new Map();units.forEach((unit,i)=>unit.forEach(o=>groups.set(o.id,i)));for(const o of objects){for(const k of ['attachStart','attachEnd'])if(o[k]&&(groups.has(o.id)||groups.has(o[k].id))&&groups.get(o.id)!==groups.get(o[k].id))throw Error('Group connected elements into the same panel before arranging');if(o.branchTrunkId&&(groups.has(o.id)||groups.has(o.branchTrunkId))&&groups.get(o.id)!==groups.get(o.branchTrunkId))throw Error('Group branched arrows into the same panel before arranging')}}
- transact(()=>{for(let i=0;i<count;i++){
-  const x=margin+(i%cols)*(cellW+gap),y=margin+Math.floor(i/cols)*(cellH+gap),label=i<26?String.fromCharCode(65+i):'A'+String.fromCharCode(65+i-26);
-  if(config.arrange){const unit=units[i],b=nxBounds(unit),f=Math.min((cellW-12)/Math.max(1,b.right-b.left),(cellH-fs*1.6-12)/Math.max(1,b.bottom-b.top),1),left=x+(cellW-(b.right-b.left)*f)/2,top=y+fs*1.6+(cellH-fs*1.6-(b.bottom-b.top)*f)/2;
-   for(const o of unit){const xx=left+(o.x-b.left)*f,yy=top+(o.y-b.top)*f;uiPubScale(o,f,f);translateObject(o,xx-o.x,yy-o.y);if(Number.isFinite(o.strokeWidth))o.strokeWidth*=f;if(Number.isFinite(o.branchLength))o.branchLength*=f}
-  }else{const frame=rect(x,y,cellW,cellH,'none',0);frame.strokeColor='#9aafbf';frame.strokeWidth=.8;frame.dashStyle='dashed';frame.publicationPanelFrame=label;objects.push(frame);created.push(frame.id)}
-  const tag=txt(label,x+5,y+4,fs,'#26384a',700);tag.publicationPanelLabel=true;objects.push(tag);created.push(tag.id)
- }selection(created)});showToast('Created '+count+' labeled panels')
-}
-function uiPubPanelDialog(){
- modal('<h2>Publication panel layout</h2><p>Create editable panel frames and A–Z labels or arrange selected objects/groups into equal grid cells. Selected content is shrunk proportionally if necessary; existing unrelated artwork is unchanged. For a blank grid, use a blank page.</p>'+uiPubSelect('uiPanelMode','Content',[['blank','Blank panel frames and labels'],['arrange','Arrange selected objects/groups']],selectedIds.size?'arrange':'blank')+'<div class="nx-grid">'+uiPubField('uiPanelCols','Columns',2,1,6,1)+uiPubField('uiPanelRows','Rows',2,1,6,1)+uiPubField('uiPanelMargin','Outer margin (mm)',5,0,100)+uiPubField('uiPanelGap','Panel gap (mm)',4,0,100)+uiPubField('uiPanelFont','Label size (pt)',12,3,36)+'</div><button class="btn primary" id="uiPanelApply">Create panel layout</button><hr><h3>Common publication widths</h3><p>Example widths, not journal-specific guarantees. Changes canvas width on every page; existing content is not rescaled.</p>'+uiPubSelect('uiJournalWidth','Width (mm)',[['85','85 mm · single column'],['90','90 mm · single column'],['180','180 mm · double column']],'180')+'<button class="btn" id="uiJournalApply">Set canvas width</button>');
- $('#uiPanelApply').onclick=()=>uiPubSafe(()=>{const config={cols:uiPubNum('uiPanelCols'),rows:uiPubNum('uiPanelRows'),margin:uiPubNum('uiPanelMargin')*PAGE_FACTORS.mm,gap:uiPubNum('uiPanelGap')*PAGE_FACTORS.mm,fontPx:uiPubNum('uiPanelFont')*96/72,arrange:$('#uiPanelMode').value==='arrange'};uiPubPanelGrid(config);closeModal()});
- $('#uiJournalApply').onclick=()=>{if(!confirm('Change canvas width on all pages without scaling existing artwork?'))return;pageUnit='mm';setCanvasSize(+$('#uiJournalWidth').value*PAGE_FACTORS.mm,canvasHeight);closeModal();nxFitAvailable()}
-}
-/* 23.4: lossless RGB raster TIFF and PDF with exact page size. */
-function uiPubRGBSize(dpi){const s=pngExportSize(dpi);if(s.width*s.height>20000000)throw Error('TIFF/PDF limit is 20 megapixels per export; lower DPI or use SVG');return s}
-async function uiPubRaster(dpi){const s=uiPubRGBSize(dpi),wPt=canvasWidth*72/96,hPt=canvasHeight*72/96,svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 '+canvasWidth+' '+canvasHeight+'" width="'+canvasWidth+'" height="'+canvasHeight+'">'+svgDocument(true)+'</svg>',url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
- try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=s.width;c.height=s.height;const ctx=c.getContext('2d',{alpha:false,willReadFrequently:true});if(!ctx)throw Error('Canvas allocation failed');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);const data=ctx.getImageData(0,0,c.width,c.height).data,rgb=new Uint8Array(c.width*c.height*3);for(let i=0,j=0;i<data.length;i+=4){rgb[j++]=data[i];rgb[j++]=data[i+1];rgb[j++]=data[i+2]}c.width=c.height=1;return {...s,rgb,wPt,hPt}}
- finally{URL.revokeObjectURL(url)}
-}
-function uiPubTiff(s){
- const tags=14,ifd=8,bits=ifd+2+tags*12+4,xres=bits+6,yres=xres+8,start=yres+8,head=new Uint8Array(start),v=new DataView(head.buffer);
- head.set([73,73,42,0]);v.setUint32(4,ifd,true);v.setUint16(ifd,tags,true);let i=0;
- function entry(tag,type,count,value){const p=ifd+2+i++*12;v.setUint16(p,tag,true);v.setUint16(p+2,type,true);v.setUint32(p+4,count,true);if(type===3&&count===1)v.setUint16(p+8,value,true);else v.setUint32(p+8,value,true)}
- entry(256,4,1,s.width);entry(257,4,1,s.height);entry(258,3,3,bits);entry(259,3,1,1);entry(262,3,1,2);entry(273,4,1,start);entry(274,3,1,1);entry(277,3,1,3);entry(278,4,1,s.height);entry(279,4,1,s.rgb.length);entry(282,5,1,xres);entry(283,5,1,yres);entry(284,3,1,1);entry(296,3,1,2);
- for(let j=0;j<3;j++)v.setUint16(bits+2*j,8,true);for(const p of [xres,yres]){v.setUint32(p,s.dpi,true);v.setUint32(p+4,1,true)}return new Blob([head,s.rgb],{type:'image/tiff'})
-}
-function uiPubPdf(s){
- const enc=new TextEncoder(),parts=[],offsets=[0];let offset=0;
- const add=x=>{const data=typeof x==='string'?enc.encode(x):x;parts.push(data);offset+=data.length};
- const num=x=>Number(x.toFixed(5)),w=num(s.wPt),h=num(s.hPt);
- const obj=(n,body)=>{offsets[n]=offset;add(n+' 0 obj\n');for(const item of body)add(item);add('\nendobj\n')};
- add('%PDF-1.4\n');add(new Uint8Array([37,226,227,207,211,10]));
- obj(1,['<< /Type /Catalog /Pages 2 0 R >>']);obj(2,['<< /Type /Pages /Kids [3 0 R] /Count 1 >>']);
- obj(3,['<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+w+' '+h+'] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>']);
- obj(4,['<< /Type /XObject /Subtype /Image /Width '+s.width+' /Height '+s.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Length '+s.rgb.length+' >>\nstream\n',s.rgb,'\nendstream']);
- const commands='q\n'+w+' 0 0 '+h+' 0 0 cm\n/Im0 Do\nQ\n';obj(5,['<< /Length '+enc.encode(commands).length+' >>\nstream\n'+commands+'endstream']);
- const start=offset;add('xref\n0 6\n0000000000 65535 f \n');for(let i=1;i<=5;i++)add(String(offsets[i]).padStart(10,'0')+' 00000 n \n');add('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+start+'\n%%EOF\n');return new Blob(parts,{type:'application/pdf'})
-}
-let uiPubExportBusy=false;
-async function uiPubExport(format,dpi){if(uiPubExportBusy)return;uiPubExportBusy=true;try{const s=await uiPubRaster(dpi),blob=format==='tiff'?uiPubTiff(s):uiPubPdf(s);saveBlob(blob,uiPubFileName('_'+dpi+'dpi.'+(format==='tiff'?'tif':'pdf')),blob.type);showToast(format.toUpperCase()+' exported · '+dpi+' DPI · lossless RGB')}catch(e){showToast('Export failed: '+e.message)}finally{uiPubExportBusy=false}}
-const uiPubShowExport=showExport;showExport=function(){uiPubShowExport();const card=document.createElement('div');card.className='v23-export-card';card.innerHTML='<h3>Publication raster formats</h3><p>Current page, lossless RGB with white transparency background. TIFF stores DPI; PDF stores physical page size. PDF text and vectors are rasterized. Use SVG for editable vectors.</p><div class="actiongrid"><button class="btn" id="uiTiffExport">Export TIFF</button><button class="btn" id="uiPdfExport">Export PDF</button></div><p id="uiPubExportNote"></p>';$('#jsonExport').closest('.v23-export-card').before(card);
- const dpi=()=>+($('#exportDpi').value==='custom'?$('#customDpi').value:$('#exportDpi').value);
- const refresh=()=>{let note='';try{const s=uiPubRGBSize(dpi());note=s.width+' × '+s.height+' px · '+s.dpi+' DPI'}catch(e){note=e.message}const ok=(()=>{try{uiPubRGBSize(dpi());return true}catch{return false}})();$('#uiPubExportNote').textContent=note;$('#uiTiffExport').disabled=!ok;$('#uiPdfExport').disabled=!ok};
- $('#exportDpi').addEventListener('change',refresh);$('#customDpi').addEventListener('input',refresh);for(const [id,kind] of [['uiTiffExport','tiff'],['uiPdfExport','pdf']])$('#'+id).onclick=()=>{const d=dpi();closeModal();uiPubExport(kind,d)};refresh()
-};$('#exportBtn').onclick=showExport;
-/* 23.5: non-destructive raster image views, calibrated bars and insets. */
-function uiPubRasterAsset(o){const a=o&&byId[o.type];return a?.uploaded&&a.kind==='raster'&&validDataImage(a.source)?a:null}
-function uiPubImageView(o,a){
- const v=o.imageView&&typeof o.imageView==='object'?o.imageView:{},x=uiPubClamp(v.x,0,Math.max(0,a.width-1),0),y=uiPubClamp(v.y,0,Math.max(0,a.height-1),0);
- return {x,y,w:uiPubClamp(v.w,1,a.width-x,a.width-x),h:uiPubClamp(v.h,1,a.height-y,a.height-y),brightness:uiPubClamp(v.brightness,-.5,.5,0),contrast:uiPubClamp(v.contrast,.5,2,1),umPerPixel:uiPubClamp(v.umPerPixel,0,100000,0),barUm:uiPubClamp(v.barUm,0,10000000,0),barColor:v.barColor==='black'?'black':'white'}
-}
-function uiPubRasterMarkup(o,a){
- const v=uiPubImageView(o,a),id='uiImg'+(++scifiNext.serial),slope=v.contrast,offset=(1-slope)/2+v.brightness,filter=v.brightness||v.contrast!==1;
- let markup=filter?'<defs><filter id="'+id+'" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer>'+['R','G','B'].map(k=>'<feFunc'+k+' type="linear" slope="'+slope+'" intercept="'+offset+'"/>').join('')+'</feComponentTransfer></filter></defs>':'';
- markup+='<svg x="0" y="0" width="'+o.w+'" height="'+o.h+'" viewBox="'+[v.x,v.y,v.w,v.h].join(' ')+'" preserveAspectRatio="none" overflow="hidden"><image width="'+a.width+'" height="'+a.height+'" href="'+svgEsc(a.source)+'" preserveAspectRatio="none"'+(filter?' filter="url(#'+id+')"':'')+'/></svg>';
- const len=v.umPerPixel>0?v.barUm/v.umPerPixel/v.w*o.w:0;
- if(len>0&&len<=o.w*.85){const pad=Math.min(o.w,o.h)*.055,fs=Math.max(4,Math.min(14,o.h*.07)),x=o.w-pad-len,y=o.h-pad,outline=v.barColor==='black'?'white':'black';markup+='<g class="ui-microscopy-bar"><path d="M'+x+' '+y+'h'+len+'" stroke="'+outline+'" stroke-width="'+Math.max(2,o.h*.024)+'"/><path d="M'+x+' '+y+'h'+len+'" stroke="'+v.barColor+'" stroke-width="'+Math.max(1,o.h*.013)+'"/><text x="'+(x+len/2)+'" y="'+(y-fs*.5)+'" text-anchor="middle" font-family="Arial,sans-serif" font-size="'+fs+'" font-weight="600" fill="'+v.barColor+'" stroke="'+outline+'" stroke-width=".6" paint-order="stroke">'+svgEsc(Number(v.barUm.toPrecision(6))+' µm')+'</text></g>'}
- return markup
-}
-function uiPubImageApply(o,a,v){o.imageView=uiPubImageView({imageView:v},a);o.h=o.w*o.imageView.h/o.imageView.w}
-function uiPubImageDialog(){
- const o=selectedObj(),a=uiPubRasterAsset(o);if(!uiPubEditable(o)||!a)throw Error('Select an imported PNG, JPEG or WebP illustration. Use Upload icon or drag an image onto the canvas.');
- const v=uiPubImageView(o,a),original=structuredClone(v);
- modal('<h2>Image annotation</h2><p>'+svgEsc(a.name)+' · original '+a.width+' × '+a.height+' pixels. Source pixels are kept unchanged. Adjustments apply uniformly to the entire image view and are recorded in the project.</p><div class="nx-grid">'+uiPubField('uiImgX','Crop left (px)',v.x,0,a.width-1,1)+uiPubField('uiImgY','Crop top (px)',v.y,0,a.height-1,1)+uiPubField('uiImgW','Crop width (px)',v.w,1,a.width,1)+uiPubField('uiImgH','Crop height (px)',v.h,1,a.height,1)+uiPubField('uiImgB','Brightness offset',v.brightness,-.5,.5,.05)+uiPubField('uiImgC','Contrast multiplier',v.contrast,.5,2,.05)+uiPubField('uiImgCal','Calibration (µm / source pixel)',v.umPerPixel,0,100000,.001)+uiPubField('uiImgBar','Scale-bar length (µm; 0 = off)',v.barUm,0,10000000,.1)+uiPubSelect('uiImgBarColor','Scale-bar color',[['white','White'],['black','Black']],v.barColor)+'</div><div class="nx-preview"><svg id="uiImgPreview" viewBox="0 0 280 180"></svg></div><p id="uiImgWarning" class="hint"></p><div class="actiongrid"><button class="btn primary" id="uiImgApply">Apply image view</button><button class="btn" id="uiImgInset">Create magnified inset + ROI</button><button class="btn" id="uiImgReset">Reset image view</button></div><p class="hint">Enter calibration from the original acquisition metadata; SCiFi cannot infer physical specimen dimensions. Do not selectively adjust images or conceal data. Keep original files and document processing according to journal policy.</p>');
- function read(){const p={x:uiPubNum('uiImgX'),y:uiPubNum('uiImgY'),w:uiPubNum('uiImgW'),h:uiPubNum('uiImgH'),brightness:uiPubNum('uiImgB'),contrast:uiPubNum('uiImgC'),umPerPixel:uiPubNum('uiImgCal'),barUm:uiPubNum('uiImgBar'),barColor:$('#uiImgBarColor').value};if(![p.x,p.y,p.w,p.h,p.brightness,p.contrast,p.umPerPixel,p.barUm].every(Number.isFinite)||p.x<0||p.y<0||p.w<1||p.h<1||p.x+p.w>a.width+.00001||p.y+p.h>a.height+.00001)throw Error('Crop must be inside the original image');if(p.brightness<-.5||p.brightness>.5||p.contrast<.5||p.contrast>2||p.umPerPixel<0||p.barUm<0)throw Error('Choose valid image adjustment values');if(p.barUm>0&&(!p.umPerPixel||p.barUm/p.umPerPixel>p.w*.85))throw Error('Scale bar needs a positive calibration and must fit inside the cropped image');return p}
- function preview(){try{const p=read(),w=Math.min(260,160*p.w/p.h),h=w*p.h/p.w;$('#uiImgPreview').innerHTML='<g transform="translate('+((280-w)/2)+' '+((180-h)/2)+')">'+uiPubRasterMarkup({...o,w,h,imageView:p},a)+'</g>';$('#uiImgWarning').textContent='';$('#uiImgApply').disabled=false;$('#uiImgInset').disabled=false}catch(e){$('#uiImgWarning').textContent=e.message;$('#uiImgApply').disabled=true;$('#uiImgInset').disabled=true}}
- for(const id of ['uiImgX','uiImgY','uiImgW','uiImgH','uiImgB','uiImgC','uiImgCal','uiImgBar','uiImgBarColor'])$('#'+id).addEventListener('input',preview);preview();
- $('#uiImgApply').onclick=()=>uiPubSafe(()=>{const p=read();closeModal();transact(()=>uiPubImageApply(o,a,p))});
- $('#uiImgReset').onclick=()=>{closeModal();transact(()=>{delete o.imageView;o.h=o.w*a.height/a.width})};
- $('#uiImgInset').onclick=()=>uiPubSafe(()=>{const p=read();if(o.rotation%360||o.flipX||o.flipY)throw Error('Reset image rotation and flips before creating an ROI inset');if(p.x<original.x||p.y<original.y||p.x+p.w>original.x+original.w||p.y+p.h>original.y+original.h)throw Error('Inset crop must be inside the currently visible image');if(objects.length>4997)throw Error('Page capacity reached');
-  closeModal();transact(()=>{const inset=structuredClone(o);inset.id=uid();delete inset.groupId;delete inset.groupStack;inset.name='Magnified inset';const w=Math.min(canvasWidth*.45,Math.max(60,o.w*.8));inset.w=w;uiPubImageApply(inset,a,p);inset.x=Math.max(0,Math.min(canvasWidth-inset.w,o.x+o.w+15));inset.y=Math.max(0,Math.min(canvasHeight-inset.h,o.y));const roi=rect(o.x+(p.x-original.x)/original.w*o.w,o.y+(p.y-original.y)/original.h*o.h,p.w/original.w*o.w,p.h/original.h*o.h,'none',0);roi.strokeColor='#527e97';roi.strokeWidth=1.5;roi.dashStyle='dashed';objects.push(roi,inset);selectOnly(inset.id)})})
-}
-function uiPubImageLog(){const rows=[];for(const p of pages){uiPubWalk(p.id===activePageId?objects:p.elements,o=>{const a=uiPubRasterAsset(o);if(a)rows.push({page:p.name,object:o.name||a.name,source:a.name,originalPixels:[a.width,a.height],view:uiPubImageView(o,a),displaySizePx:[o.w,o.h],sourcePreserved:true})})}saveBlob(JSON.stringify({project:projectName,note:'User-supplied calibration; original image files and acquisition metadata should also be retained.',images:rows},null,2),uiPubFileName('_image-processing.json'),'application/json')}
-/* 23.6: publication preflight, advisory rather than a compliance certificate. */
-function uiPubPreflight(config){
- const issues=[],add=(p,o,message)=>issues.push({pageId:p.id,id:o?.id||null,page:p.name,message}),limit=Number(config.dpi)||300,minFont=Number(config.font)||8,minStroke=Number(config.stroke)||.5;
- for(const p of pages){const items=p.id===activePageId?objects:p.elements,labels=[];
-  for(const o of items.filter(v=>!v.hidden&&v.type!=='reference')){const b=bounds(o);if(b.left<-.5||b.top<-.5||b.right>canvasWidth+.5||b.bottom>canvasHeight+.5)add(p,o,'Object extends outside the page (approximate frame bounds)');if(o.publicationPanelLabel)labels.push(o)}
-  const labelText=labels.map(o=>o.text);if(new Set(labelText).size!==labelText.length)add(p,labels[0],'Duplicate generated panel labels');
-  uiPubWalk(items,(o,sx,sy,root)=>{
-   if(o.type==='text'){const sizes=[o.fontSize||20,...(o.richRuns||[]).map(r=>r.style?.fontSize).filter(Number.isFinite)],pt=Math.min(...sizes)*sy*72/96;if(pt<minFont)add(p,root,'Text "'+String(o.text||'').slice(0,32)+'" may be '+pt.toFixed(1)+' pt (minimum '+minFont+')')}
-   if(uiPubHasStroke(o)){const pt=(o.strokeWidth??2)*Math.min(sx,sy)*72/96;if(pt<minStroke)add(p,root,'Thin outline / line: '+pt.toFixed(2)+' pt')}
-   const a=uiPubRasterAsset(o);if(a){const v=uiPubImageView(o,a),dpi=Math.min(v.w*96/Math.max(.01,o.w*sx),v.h*96/Math.max(.01,o.h*sy));if(dpi<limit)add(p,root,'Raster image "'+a.name+'" approximately '+Math.floor(dpi)+' effective DPI (target '+limit+')');if(v.barUm>0&&(!v.umPerPixel||v.barUm/v.umPerPixel>v.w*.85))add(p,root,'Scale bar does not fit or calibration is missing')}
-   const asset=byId[o.sourceAssetId]||byId[o.type];if(asset?.uploaded&&(!asset.license||asset.license==='unspecified'||asset.license==='mixed'))add(p,root,'Imported illustration/image: verify rights or source provenance ('+asset.name+')');
-   if(o.type==='plot')add(p,root,'Schematic plot uses synthetic example values; verify that it is not presented as experimental data')
-  })
- }
- return issues
-}
-function uiPubPreflightDialog(){
- modal('<h2>Publication preflight</h2><p>Advisory checks across all pages. Set requirements for your intended journal. This checks native text and line styles, estimated raster DPI, page boundaries, generated panel labels, imported provenance and synthetic plots. It cannot certify journal compliance or detect every embedded text/line in source SVG artwork.</p><p>Page dimensions: '+formatPageUnit(canvasWidth,'mm')+' × '+formatPageUnit(canvasHeight,'mm')+' mm</p><div class="nx-grid">'+uiPubField('uiCheckDpi','Minimum effective DPI',300,1,2400,1)+uiPubField('uiCheckFont','Minimum font size (pt)',8,1,60)+uiPubField('uiCheckStroke','Minimum line width (pt)',.5,.01,10)+'</div><button class="btn primary" id="uiCheckRun">Run checks</button><p id="uiCheckSummary" role="status"></p><div id="uiCheckList"></div><button class="btn" id="uiCheckDownload">Download report</button>');
- let issues=[];function check(){issues=uiPubPreflight({dpi:uiPubNum('uiCheckDpi'),font:uiPubNum('uiCheckFont'),stroke:uiPubNum('uiCheckStroke')});$('#uiCheckSummary').textContent=issues.length?issues.length+' advisory findings · select an item to inspect':'No findings in the implemented checks. Review the figure and journal requirements manually.';const list=$('#uiCheckList');list.replaceChildren();for(const issue of issues.slice(0,250)){const b=document.createElement('button');b.type='button';b.className='btn small ui-pub-finding';b.textContent=issue.page+' · '+issue.message;b.onclick=()=>{closeModal();activatePage(issue.pageId);if(issue.id)setSelected(issue.id);else render()};list.append(b)}if(issues.length>250){const more=document.createElement('p');more.textContent='Additional findings are included in the downloadable report.';list.append(more)}}$('#uiCheckRun').onclick=check;$('#uiCheckDownload').onclick=()=>saveBlob(JSON.stringify({project:projectName,pageMm:[formatPageUnit(canvasWidth,'mm'),formatPageUnit(canvasHeight,'mm')],thresholds:{dpi:uiPubNum('uiCheckDpi'),fontPt:uiPubNum('uiCheckFont'),strokePt:uiPubNum('uiCheckStroke')},issues:uiPubPreflight({dpi:uiPubNum('uiCheckDpi'),font:uiPubNum('uiCheckFont'),stroke:uiPubNum('uiCheckStroke')}),note:'Advisory checks only'},null,2),uiPubFileName('_preflight.json'),'application/json');check()
-}
-/* Entry points remain inside the existing toolbar / export dialog. */
-function uiPubMenu(){
- modal('<h2>Publication tools</h2><p>Editable scientific figure workflows</p><div class="ui-pub-menu"><button class="btn" id="uiPubCopy">Copy appearance</button><button class="btn" id="uiPubPaste">Apply copied appearance</button><button class="btn" id="uiPubFormat">Global figure formatting</button><button class="btn" id="uiPubPosition">Precise object dimensions</button><button class="btn" id="uiPubPanels">Publication panel layout</button><button class="btn" id="uiPubImage">Image annotation / scale bar</button><button class="btn" id="uiPubImageLog">Download image processing log</button><button class="btn" id="uiPubPreflight">Publication preflight</button><button class="btn" id="uiPubExportMenu">Export TIFF, PDF, PNG or SVG</button></div>');
- const actions={uiPubCopy:uiPubCopyStyle,uiPubPaste:uiPubApplyStyle,uiPubFormat:uiPubFormatDialog,uiPubPosition:uiPubPhysicalDialog,uiPubPanels:uiPubPanelDialog,uiPubImage:uiPubImageDialog,uiPubImageLog:uiPubImageLog,uiPubPreflight:uiPubPreflightDialog,uiPubExportMenu:showExport};for(const [id,fn] of Object.entries(actions))$('#'+id).onclick=()=>{closeModal();uiPubSafe(fn)}
-}
-nxButton('uiPublicationBtn','Publication ▾',uiPubMenu,$('#canvasSizeBtn').parentElement).title='Scientific publication layout, formatting, images and preflight';
-nxButton('uiRecoveryBtn','Recovery',uiRecoveryDialog,$('#canvasSizeBtn').parentElement);
-const uiPubCss=document.createElement('style');uiPubCss.textContent='.ui-pub-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ui-pub-menu .btn{white-space:normal;text-align:left;min-height:36px}.ui-pub-finding{display:block;width:100%;text-align:left;white-space:normal;margin:5px 0;line-height:1.4}.ui-pub-menu .btn:focus-visible{outline:2px solid #527a94}';document.head.append(uiPubCss);
-const uiPubRenderBase=render;render=function(){uiPubRenderBase();uiRecoverySchedule()};
-$('#projectName').addEventListener('input',uiRecoverySchedule);document.addEventListener('change',uiRecoverySchedule);setInterval(()=>uiRecoverySave(),15000);
-uiRecoveryInit();
 
 nxFitAvailable();
 </script>
