@@ -380,7 +380,7 @@ with sync_playwright() as p:
         assert page.evaluate("pages[0].elements[0].children[0].fill") == "#FEDCBA"
         page.evaluate("activatePage(pages[0].id);undo()")
         assert page.evaluate("objects[0].children[0].fill") == "#112233"
-        page.evaluate("removeCurrentPage") # no mutation; reset test fixture to a single page
+        # Reset the test fixture to a single page without invoking the delete-page dialog.
         page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
