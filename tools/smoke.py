@@ -59,6 +59,16 @@ with sync_playwright() as p:
             page.evaluate("saveProject()")
         assert download.value.suggested_filename == "Fallback figure.json"
         assert page.locator("#projectName").input_value() == "Fallback figure"
+        # v23.1 workspace rail and shape chooser.
+        assert page.locator(".v231-rail #selectTool").count() == 1
+        page.locator(".v231-rail #textTool").click()
+        assert page.evaluate("activeTool") == "text"
+        page.locator(".v231-rail #selectTool").click()
+        page.locator(".v231-rail #shapePaletteBtn").click()
+        assert page.locator("#shapePalette").is_visible()
+        page.locator("#shapePalette [data-shape-choice]").first.click()
+        assert page.evaluate("activeTool") == "box"
+        page.locator(".v231-rail #selectTool").click()
         # v23: preserve rich styles while overriding text color via the inspector.
         page.evaluate("""() => {
             const o=txt('Mixed',10,10,20,'#000000',500);
@@ -69,6 +79,12 @@ with sync_playwright() as p:
         assert page.evaluate("selectedObj().color") == "#007700"
         assert page.evaluate("selectedObj().richRuns[0].style.italic")
         assert page.evaluate("!('color' in selectedObj().richRuns[0].style)")
+        assert page.locator("#v231Context [aria-label=Color]").count() == 1
+        section=page.locator(".v231-inspector-toggle").filter(has_text="Appearance").first
+        section.click()
+        assert section.get_attribute("aria-expanded") == "false"
+        section.click()
+        assert section.get_attribute("aria-expanded") == "true"
         page.evaluate("canvasSizeDialog()")
         page.locator("#pagePreset").select_option("A4")
         page.locator("#pageOrientation").select_option("portrait")
