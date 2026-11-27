@@ -283,6 +283,38 @@ with sync_playwright() as p:
         assert page.locator("#scifiRepeatMode").input_value() == "auto"
         assert page.locator("#uiLibSize").input_value() == "normal"
         assert page.locator("#nxToggle-pages").get_attribute("aria-expanded") == "true"
+        # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
+        page.wait_for_function("() => uiRecReady && !uiRecBusy")
+        page.evaluate("""() => {
+            objects=[txt('Recovery test',20,30,18,'#123456')];selectOnly(null);
+            projectName='Recovery test project';$('#projectName').value=projectName;
+            uiGuideList().splice(0);uiGuideAdd('x',10);
+            appendPage(false);
+            objects=[txt('Second page',15,15,16,'#654321')];render();
+        }""")
+        page.wait_for_function("() => !uiRecBusy")
+        draft_id=page.evaluate("uiRecId")
+        assert page.evaluate("uiRecSave(true)")
+        assert page.evaluate("async id => (await uiRecRead(id)).project.pages.length",draft_id) == 2
+        page.reload()
+        page.wait_for_function("() => uiRecReady")
+        assert page.evaluate("id => uiRecList.some(d=>d.id===id)",draft_id)
+        assert page.evaluate("projectName") != "Recovery test project"
+        page.locator("#uiRecButton").click()
+        row=page.locator("[data-recovery-id='"+draft_id+"']")
+        page.once("dialog", lambda dialog: dialog.accept())
+        row.locator(".ui-rec-restore").click()
+        page.wait_for_function("() => projectName==='Recovery test project'")
+        assert page.evaluate("pages.length") == 2
+        assert page.evaluate("objects[0].text") == "Second page"
+        assert page.evaluate("pages[0].guides[0].v") == 10
+        assert page.evaluate("async id => !!(await uiRecRead(id))",draft_id)
+        # Deleting a checkpoint never changes document data.
+        page.locator("#uiRecButton").click()
+        page.once("dialog", lambda dialog: dialog.accept())
+        row.locator(".ui-rec-delete").click()
+        page.wait_for_function("id => !uiRecList.some(d=>d.id===id)",arg=draft_id)
+        assert page.evaluate("objects[0].text") == "Second page"
         assert not errors, errors
         page.close()
     browser.close()

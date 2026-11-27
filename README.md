@@ -14,6 +14,10 @@ v22.1 public preview · 27 November 2026
 
 The preview contains vector drawing and layout tools, editable paths and shapes, text and arrows, an icon editor, synthetic plot tools, local project import/export and 471 editable scientific illustrations: 329 molecular biology, 13 human organoids, 36 expanded cell atlas, 19 early progenitors, 17 original lineage illustrations, 34 embryogenesis illustrations and all 23 Carnegie stages. Molecular variants are grouped into families by default; enable **Show individual variants** for the complete count. Other unresolved private artwork, including laboratory essentials, branded instruments and legacy drawings, is excluded.
 
+## v23.1 — Recovery review
+
+This version restores the approved v23 UI baseline and adds only local recovery checkpoints. The Recovery button provides automatic checkpoint controls, manual checkpointing, recovery, JSON download and explicit deletion. IndexedDB stores up to eight editing-session drafts (60 MB per draft); previous drafts are not silently replaced or evicted. Checkpoints run after committed edits (three-second debounce and 15-second periodic check). Unfinished editing sessions are skipped. Project files and SVG/PNG export are unchanged. Browser-local recovery is best effort, not a substitute for manual project saving. Browser storage may be unavailable, cleared, or different after moving a standalone file.
+
 ## v23 UI review 7 — Workspace preferences
 
 Workspace preferences remember normal panel collapse states, widths, minimized-width restore values, Properties section states, ruler and grid visibility, snapping options, tool behavior and library display options locally in the browser. The Preferences button in the Edit tools header offers common settings and a reset to defaults. Focus canvas does not overwrite the usual panel configuration. Reset preserves current document data, page guides, favorites and recent colors/illustrations. Storage is browser-dependent, especially for renamed or moved standalone HTML files; if unavailable, preferences work for the current session only.

@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 — Workspace preferences review 7</title>
+<title>SCiFi Studio v23.1 — Recovery review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 7</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.1 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -2229,7 +2229,7 @@ function newProjectDialog(){
  if(objects.length&&!confirm('Create a new blank figure? Unsaved changes to the current figure will be lost.'))return;
  closeTextEditor(false);projectName=String($('#newDocName').value||'Untitled figure').trim().slice(0,90)||'Untitled figure';$('#projectName').value=projectName;
  pageBackground=validPageColor($('#newTransparent').checked?'transparent':$('#newBg').value);objects=[];pages=[{id:'pg1',name:'Page 1',background:pageBackground,elements:[],undos:[],redos:[]}];pageSerial=1;activePageId='pg1';undos=[];redos=[];galleryActiveId=null;pointer=null;arrowDraft=null;selectOnly(null);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground;
- pageUnit=size.unit;setCanvasSize(size.width,size.height,false);setTool('select');render();updateHistory();closeModal();nxFitAvailable();showToast('New blank figure created')};
+ pageUnit=size.unit;setCanvasSize(size.width,size.height,false);setTool('select');render();updateHistory();closeModal();nxFitAvailable();window.scifiRecoveryNewDocument?.();showToast('New blank figure created')};
 }
 function canvasSizeDialog(){
  modal(`<h2>Canvas size</h2><p>Applies to all pages. Existing objects retain their positions and sizes.</p>${pageSizeFields('page',canvasWidth,canvasHeight,pageUnit)}<button class="btn primary" id="applyCanvasSize">Apply canvas size</button>`);
@@ -3590,6 +3590,100 @@ function uiWorkspaceDialog(){
 }
 const uiWorkspaceButton=nxButton('uiWorkspacePrefs','Preferences',uiWorkspaceDialog,nx207Actions);uiWorkspaceButton.title='Workspace preferences and reset layout';uiWorkspaceButton.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/><circle cx="10" cy="18" r="2" fill="white"/></svg><span>Preferences</span>';
 const uiWorkspaceStored=uiWorkspaceRead();if(uiWorkspaceStored)uiWorkspaceApply(uiWorkspaceStored);
+
+/* v23.1: recovery checkpoints only. Keep original project format and editing tools. */
+const uiRecDB='SCiFi-Studio-recovery-v1',uiRecStore='drafts',uiRecLimit=8,uiRecMaxBytes=60*1024*1024;
+const uiRecNewId=()=> 'draft-'+(globalThis.crypto?.randomUUID?.()||uid()+'-'+uid()+'-'+Date.now());
+let uiRecId=uiRecNewId(),uiRecReady=false,uiRecBusy=false,uiRecEnabled=true,uiRecTimer=0,uiRecLast='',uiRecList=[],uiRecStatus='Checking recovery storage…',uiRecSavingId=null;
+try{uiRecEnabled=localStorage.getItem('scifi.recovery.enabled')!=='false'}catch{}
+function uiRecTransaction(mode,action){
+ return new Promise((resolve,reject)=>{
+  if(!window.indexedDB){reject(Error('IndexedDB unavailable'));return}
+  const req=indexedDB.open(uiRecDB,1);
+  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(uiRecStore))req.result.createObjectStore(uiRecStore)};
+  req.onerror=()=>reject(req.error||Error('Cannot open recovery database'));req.onblocked=()=>reject(Error('Recovery storage blocked'));
+  req.onsuccess=()=>{const db=req.result;let tx,value,problem;
+   try{tx=db.transaction(uiRecStore,mode);action(tx.objectStore(uiRecStore),v=>{value=v},e=>{problem=e;tx.abort()})}
+   catch(e){db.close();reject(e);return}
+   tx.oncomplete=()=>{db.close();resolve(value)};tx.onerror=tx.onabort=()=>{db.close();reject(problem||tx.error||Error('Recovery storage failed'))}
+  };
+ });
+}
+function uiRecRead(id){return uiRecTransaction('readonly',(s,done)=>{const req=s.get(id);req.onsuccess=()=>done(req.result)})}
+function uiRecRemove(id){return uiRecTransaction('readwrite',s=>{s.delete(id)})}
+function uiRecWrite(id,record){
+ return uiRecTransaction('readwrite',(s,done,fail)=>{
+  const req=s.getKey(id);req.onsuccess=()=>{if(req.result!==undefined){s.put(record,id);return}
+   const count=s.count();count.onsuccess=()=>{if(count.result>=uiRecLimit)fail(Error('Recovery storage holds '+uiRecLimit+' drafts. Delete unneeded drafts in Recovery.'));else s.put(record,id)}
+  }
+ })
+}
+async function uiRecRefresh(){
+ uiRecList=await uiRecTransaction('readonly',(s,done)=>{const list=[],req=s.openCursor();req.onsuccess=()=>{const cursor=req.result;if(!cursor){done(list);return}const v=cursor.value;if(v?.project?.app==='SCiFi')list.push({id:String(cursor.key),name:String(v.project.name||'Untitled figure'),at:v.at||'',pages:v.project.pages?.length||1});cursor.continue()}});
+ uiRecList.sort((a,b)=>String(b.at).localeCompare(String(a.at)));uiRecBadge();return uiRecList
+}
+function uiRecBadge(){
+ const b=$('#uiRecButton');if(!b)return;
+ const count=uiRecList.filter(d=>d.id!==uiRecId).length;b.textContent=count?'Recovery ('+count+')':'Recovery';b.classList.toggle('active',count>0);b.title=uiRecStatus;b.setAttribute('aria-label','Recovery · '+uiRecStatus);
+ const status=$('#uiRecStatus');if(status)status.textContent=uiRecStatus;
+}
+function uiRecSnapshot(){
+ // Do not save an unfinished gesture or the separate icon/rich-text editing workspace.
+ if(iconWorkspace||textEditor||pointer||panState||penPoints.length||projectSavePending)return null;
+ const data=currentProjectData();return {data,serialized:JSON.stringify(data)}
+}
+async function uiRecSave(force=false){
+ if(!uiRecReady||uiRecBusy||(!uiRecEnabled&&!force))return false;
+ let snap;try{snap=uiRecSnapshot()}catch(e){uiRecStatus='Could not create recovery snapshot';uiRecBadge();return false}
+ if(!snap||(!force&&snap.serialized===uiRecLast))return false;
+ const id=uiRecId;uiRecBusy=true;uiRecSavingId=id;
+ try{
+  if(new Blob([snap.serialized]).size>uiRecMaxBytes)throw Error('Draft exceeds 60 MB');
+  await uiRecWrite(id,{at:new Date().toISOString(),project:snap.data});if(uiRecId===id)uiRecLast=snap.serialized;
+  uiRecStatus='Recovery checkpoint saved '+new Date().toLocaleTimeString();await uiRecRefresh();return true
+ }catch(e){uiRecStatus='Recovery not saved: '+(e.message||'storage error')+'. Save your project manually.';return false}
+ finally{uiRecBusy=false;uiRecSavingId=null;uiRecBadge()}
+}
+function uiRecSchedule(){if(!uiRecReady||!uiRecEnabled)return;clearTimeout(uiRecTimer);uiRecTimer=setTimeout(()=>uiRecSave(),3000)}
+function uiRecRotate(){clearTimeout(uiRecTimer);uiRecId=uiRecNewId();try{uiRecLast=uiRecSnapshot()?.serialized||''}catch{uiRecLast=''}uiRecBadge()}
+async function uiRecInit(){
+ try{await uiRecRefresh();uiRecReady=true;uiRecStatus=uiRecEnabled?'Automatic recovery enabled':'Automatic recovery disabled';uiRecBadge();uiRecSchedule()}
+ catch(e){uiRecStatus='Local recovery unavailable. Save editable project files manually.';uiRecBadge()}
+}
+function uiRecDialog(){
+ modal('<h2>Autosave and recovery</h2><p id="uiRecStatus" role="status"></p><label><input id="uiRecEnabled" type="checkbox"> Save automatic local recovery checkpoints</label><p class="hint">A checkpoint is written about 3 seconds after an edit, with an additional 15-second periodic check. Up to 8 editing-session drafts are retained. Earlier drafts are never silently overwritten or removed. Unfinished drawing, text and icon-editing sessions are skipped until committed.</p><div class="actiongrid"><button class="btn primary" id="uiRecNow">Checkpoint now</button><button class="btn" id="uiRecReload">Refresh drafts</button></div><div id="uiRecRows"></div><p class="hint">Recovery is not a replacement for Save project. Browser storage can be cleared or limited, and moving or renaming an offline HTML file may make earlier drafts inaccessible. A sudden crash can lose changes made since the last completed checkpoint. No data leaves this browser.</p>');
+ $('#uiRecEnabled').checked=uiRecEnabled;$('#uiRecEnabled').disabled=!uiRecReady;$('#uiRecNow').disabled=!uiRecReady;$('#uiRecReload').disabled=!uiRecReady;uiRecBadge();
+ $('#uiRecEnabled').onchange=e=>{uiRecEnabled=e.target.checked;try{localStorage.setItem('scifi.recovery.enabled',String(uiRecEnabled))}catch{}if(uiRecEnabled)uiRecSchedule();else clearTimeout(uiRecTimer);uiRecStatus=uiRecEnabled?'Automatic recovery enabled':'Automatic recovery paused; existing drafts retained';uiRecBadge()};
+ const draw=()=>{
+  const root=$('#uiRecRows');if(!root)return;root.replaceChildren();
+  if(!uiRecList.length){root.textContent='No recovery checkpoints yet.';return}
+  for(const d of uiRecList){
+   const row=document.createElement('div');row.className='ui-rec-row';row.dataset.recoveryId=d.id;
+   const title=document.createElement('strong');title.textContent=d.name+(d.id===uiRecId?' · current session':'');
+   const meta=document.createElement('small');meta.textContent=(d.at?new Date(d.at).toLocaleString():'Unknown time')+' · '+d.pages+' page(s)';
+   const actions=document.createElement('div');actions.className='actiongrid';
+   const button=(label,cls,fn)=>{const b=document.createElement('button');b.type='button';b.className='btn small '+cls;b.textContent=label;b.onclick=async()=>{try{await fn()}catch(e){uiRecStatus=e.message||'Recovery action failed';uiRecBadge()}};actions.append(b);return b};
+   button('Recover','ui-rec-restore',async()=>{if(uiRecBusy||iconWorkspace){showToast('Finish the current editing operation first');return}if(!confirm('Replace the current workspace with this draft? Save current work first.'))return;const rec=await uiRecRead(d.id);if(!rec?.project)throw Error('Draft is no longer available');await loadProjectData(rec.project);closeModal();uiRecStatus='Draft recovered. Save it as an editable project.';uiRecBadge();showToast('Recovery draft restored')});
+   button('Download JSON','ui-rec-download',async()=>{const rec=await uiRecRead(d.id);if(!rec?.project)throw Error('Draft is no longer available');saveBlob(JSON.stringify(rec.project,null,2),projectFileName(rec.project.name).replace(/\.json$/i,'')+'-recovery.json','application/json')});
+   button('Delete draft','ui-rec-delete',async()=>{if(uiRecBusy&&uiRecSavingId===d.id){showToast('Checkpoint is currently being written');return}if(!confirm('Permanently delete this recovery draft?'))return;await uiRecRemove(d.id);await uiRecRefresh();draw()});
+   row.append(title,meta,actions);root.append(row)
+  }
+ };
+ $('#uiRecNow').onclick=async()=>{if(iconWorkspace||textEditor||pointer||penPoints.length){showToast('Finish editing before checkpointing');return}await uiRecSave(true);draw()};
+ $('#uiRecReload').onclick=async()=>{try{await uiRecRefresh();draw()}catch(e){uiRecStatus=e.message;uiRecBadge()}};
+ draw();if(uiRecReady)uiRecRefresh().then(draw).catch(()=>{});
+}
+const uiRecCSS=document.createElement('style');uiRecCSS.textContent='.ui-rec-row{padding:10px 0;border-top:1px solid #d6e1ea;display:flex;flex-direction:column;gap:6px}.ui-rec-row small{color:#59768a;font-size:11px}.ui-rec-row .actiongrid{display:flex;flex-wrap:wrap;gap:5px}.ui-rec-row strong{overflow-wrap:anywhere}';document.head.append(uiRecCSS);
+nxButton('uiRecButton','Recovery',uiRecDialog,nx207Actions);
+try{uiRecLast=JSON.stringify(currentProjectData())}catch{}
+const uiRecRenderBase=render;render=function(){uiRecRenderBase();uiRecSchedule()};
+const uiRecLoadBase=loadProjectData;loadProjectData=async function(data){const result=await uiRecLoadBase(data);uiRecRotate();return result};
+$('#projectName').addEventListener('input',uiRecSchedule);document.addEventListener('change',uiRecSchedule);
+window.addEventListener('focus',()=>{if(uiRecReady)uiRecRefresh().catch(()=>{})});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')uiRecSave()});
+setInterval(()=>uiRecSave(),15000);
+window.scifiRecoveryNewDocument=uiRecRotate;
+uiRecInit();
 
 nxFitAvailable();
 </script>
