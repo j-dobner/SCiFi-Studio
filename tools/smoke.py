@@ -113,6 +113,11 @@ with sync_playwright() as p:
         page.locator("#nxFocusCanvas").click()
         assert page.evaluate("uiResizePanelWidth('right')") == initial_right+10
         left_grip.dblclick()
+        assert page.evaluate("uiResizePanelWidth('left')") == 180
+        left_grip.dblclick()
+        assert page.evaluate("uiResizePanelWidth('left')") == initial_left+80
+        left_grip.focus()
+        left_grip.press("Home")
         assert page.evaluate("uiResizePanelWidth('left')") == initial_left
         right_grip.focus()
         right_grip.press("Home")
@@ -139,6 +144,23 @@ with sync_playwright() as p:
         assert page.locator("#assets [data-asset]").count() == 0
         page.locator("#uiLibAll").click()
         page.evaluate("selectOnly(objects.find(o=>o.type==='text').id);render()")
+        # UI review 5: shared HEX palette, recent colors and mocked native eyedropper.
+        page.locator("#customColor + .ui-color-more").click()
+        page.locator("#uiColorHex").fill("bad!")
+        assert page.locator("#uiColorApply").is_disabled()
+        page.locator("#uiColorHex").fill("369")
+        page.locator("#uiColorApply").click()
+        assert page.evaluate("selectedObj().color.toLowerCase()") == "#336699"
+        assert page.evaluate("uiColorRecent[0]") == "#336699"
+        page.locator("#customColor + .ui-color-more").click()
+        assert page.locator("#uiColorPopup [aria-label='Apply #336699']").count() == 1
+        page.locator("#uiColorHex").fill("#ABCDEF")
+        page.locator("#uiColorHex").press("Escape")
+        assert page.evaluate("selectedObj().color.toLowerCase()") == "#336699"
+        page.evaluate("window.EyeDropper=class { async open(){return {sRGBHex:'#6699cc'}} }")
+        page.locator("#customColor + .ui-color-more").click()
+        page.locator("#uiColorEye").click()
+        assert page.evaluate("selectedObj().color.toLowerCase()") == "#6699cc"
         # UI review 2: sections open initially and keep their state across rendering.
         assert page.locator("#inspector .ui-props-toggle").count() >= 5
         assert page.locator("#inspector .ui-props-toggle[aria-expanded=false]").count() == 0

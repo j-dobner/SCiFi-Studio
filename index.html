@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 — Sidebar review 4</title>
+<title>SCiFi Studio v23 — Color review 5</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 4</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 5</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -1682,7 +1682,7 @@ function openQcCardEditor(id){
  transact(()=>{o.label=label;o.detail=detail;o.status=qcStates[status]?status:'not-assessed'});closeModal();showToast('QC checkpoint updated')};
  $('#qcQuickLabel').focus();
 }
-document.addEventListener('pointerdown',e=>{if(textEditor&&!textEditor.panel.contains(e.target))closeTextEditor(true)},true);
+document.addEventListener('pointerdown',e=>{if(textEditor&&!textEditor.panel.contains(e.target)&&!e.target.closest?.('#uiColorPopup'))closeTextEditor(true)},true);
 window.addEventListener('resize',()=>closeTextEditor(true));
 stage.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes('text/plain')||e.dataTransfer.types.includes('application/x-scifi-assets')||e.dataTransfer.types.includes('application/x-scifi-template')||e.dataTransfer.types.includes('Files')){e.preventDefault();e.dataTransfer.dropEffect='copy';if(e.dataTransfer.types.includes('application/x-scifi-template'))$('#canvasShell').classList.add('template-drop-target')}});
 stage.addEventListener('dragleave',e=>{if(!stage.contains(e.relatedTarget))$('#canvasShell').classList.remove('template-drop-target')});
@@ -3305,7 +3305,7 @@ const uiLibCss=document.createElement('style');uiLibCss.id='uiReviewLibrary';uiL
 ].join('\n');document.head.append(uiLibCss);renderAssets();
 
 /* UI review 4: adjustable sidebars with the original responsive defaults. */
-const uiResizeBody=$('.app .body'),uiResizeDesired={left:null,right:null},uiResizeHandles={},uiResizeNames={left:'Illustration library',right:'Properties'};
+const uiResizeBody=$('.app .body'),uiResizeDesired={left:null,right:null},uiResizeRestore={left:null,right:null},uiResizeHandles={},uiResizeNames={left:'Illustration library',right:'Properties'};
 const uiResizeCss=document.createElement('style');uiResizeCss.id='uiReviewSidebars';uiResizeCss.textContent=[
 '.app:not(.nx-hide-left) .body.ui-resize-custom-left{--nx-left:var(--ui-resize-left)}.app:not(.nx-hide-right) .body.ui-resize-custom-right{--nx-right:var(--ui-resize-right)}',
 '.ui-resize-handle{grid-column:2;grid-row:1;align-self:stretch;position:relative;z-index:5;width:7px;min-width:0;cursor:col-resize;touch-action:none;outline-offset:-2px;box-sizing:border-box}.ui-resize-handle[data-side=left]{justify-self:start}.ui-resize-handle[data-side=right]{justify-self:end}.ui-resize-handle::before{content:"";position:absolute;inset:0 auto 0 2px;width:2px;background:#d6e1ea}.ui-resize-handle::after{content:"";position:absolute;left:1px;top:50%;width:4px;height:28px;transform:translateY(-50%);border-radius:3px;background:#91adbf}.ui-resize-handle:hover,.ui-resize-handle:focus-visible,.ui-resize-handle.ui-dragging{background:#e2edf5}.ui-resize-handle:hover::before,.ui-resize-handle:focus-visible::before,.ui-resize-handle.ui-dragging::before{background:#527a94}.ui-resize-handle[hidden]{display:none!important}.app.nx-hide-left .ui-resize-handle[data-side=left],.app.nx-hide-right .ui-resize-handle[data-side=right]{display:none!important}',
@@ -3334,7 +3334,7 @@ function uiResizeSet(side,value){uiResizeDesired[side]=uiResizeClamp(side,value)
 for(const side of ['left','right']){
  const grip=document.createElement('div');grip.className='ui-resize-handle';grip.id='uiResize-'+side;grip.dataset.side=side;grip.tabIndex=0;
  grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','vertical');grip.setAttribute('aria-label','Resize '+uiResizeNames[side]);
- grip.title='Drag to resize '+uiResizeNames[side]+'. Double-click to reset. Arrow keys resize; Shift for larger steps.';
+ grip.title='Drag to resize '+uiResizeNames[side]+'. Double-click to minimize or restore. Home resets; arrow keys resize.';
  uiResizeBody.append(grip);uiResizeHandles[side]=grip;
  let drag=null;
  const finish=(e,cancel=false)=>{
@@ -3351,10 +3351,10 @@ for(const side of ['left','right']){
  });
  grip.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;e.preventDefault();uiResizeSet(side,drag.width+(e.clientX-drag.x)*(side==='left'?1:-1))});
  grip.addEventListener('pointerup',e=>finish(e));grip.addEventListener('pointercancel',e=>finish(e,true));grip.addEventListener('lostpointercapture',e=>finish(e));
- grip.addEventListener('dblclick',e=>{e.preventDefault();uiResizeDesired[side]=null;uiResizeApply()});
+ grip.addEventListener('dblclick',e=>{e.preventDefault();if(uiResizePanelWidth(side)<=uiResizeMin(side)+1){uiResizeDesired[side]=uiResizeRestore[side];uiResizeRestore[side]=null;uiResizeApply()}else{uiResizeRestore[side]=uiResizeDesired[side];uiResizeSet(side,uiResizeMin(side))}});
  grip.addEventListener('keydown',e=>{
   if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();
-  if(e.key==='Home'){uiResizeDesired[side]=null;uiResizeApply();return}
+  if(e.key==='Home'){uiResizeDesired[side]=null;uiResizeRestore[side]=null;uiResizeApply();return}
   if(e.key==='End'){uiResizeSet(side,uiResizeMax(side));return}
   const step=e.shiftKey?40:10,dir=(e.key==='ArrowRight'?1:-1)*(side==='left'?1:-1);
   uiResizeSet(side,uiResizePanelWidth(side)+step*dir);
@@ -3362,6 +3362,74 @@ for(const side of ['left','right']){
 }
 const uiResizeOriginalPanels=nxUpdatePanels;nxUpdatePanels=function(){uiResizeOriginalPanels();uiResizeApply()};
 window.addEventListener('resize',uiResizeApply);uiResizeApply();
+
+/* UI review 5: one precise color palette for existing native color fields. */
+function uiColorHex(value){
+ const s=String(value||'').trim().replace(/^#/,'');
+ if(/^[0-9a-f]{3}$/i.test(s))return '#'+[...s].map(x=>x+x).join('').toUpperCase();
+ return /^[0-9a-f]{6}$/i.test(s)?'#'+s.toUpperCase():null;
+}
+const uiColorRaw=uiLibRead('recentColors',[]);
+let uiColorRecent=Array.isArray(uiColorRaw)?[...new Set(uiColorRaw.map(uiColorHex).filter(Boolean))].slice(0,16):[];
+const uiColorPopup=document.createElement('div');uiColorPopup.id='uiColorPopup';uiColorPopup.hidden=true;uiColorPopup.setAttribute('role','dialog');uiColorPopup.setAttribute('aria-label','Color palette');document.body.append(uiColorPopup);
+let uiColorTarget=null,uiColorAnchor=null;
+function uiColorRecord(value){const hex=uiColorHex(value);if(!hex)return;uiColorRecent=[hex,...uiColorRecent.filter(c=>c!==hex)].slice(0,16);uiLibWrite('recentColors',uiColorRecent)}
+function uiColorClose(restore=false){const anchor=uiColorAnchor;uiColorTarget=null;uiColorAnchor=null;uiColorPopup.hidden=true;uiColorPopup.replaceChildren();if(anchor?.isConnected){anchor.setAttribute('aria-expanded','false');if(restore)anchor.focus({preventScroll:true})}}
+function uiColorApply(value){
+ const hex=uiColorHex(value),target=uiColorTarget;if(!hex||!target?.isConnected)return false;
+ uiColorRecord(hex);uiColorClose();
+ // Match the native input's events. Existing undo, rich text and gradient handlers remain in charge.
+ target.value=hex;target.dispatchEvent(new Event('input',{bubbles:true}));target.dispatchEvent(new Event('change',{bubbles:true}));return true;
+}
+function uiColorPosition(){
+ if(uiColorPopup.hidden||!uiColorAnchor?.isConnected)return;
+ const a=uiColorAnchor.getBoundingClientRect(),p=uiColorPopup.getBoundingClientRect();
+ uiColorPopup.style.left=Math.max(8,Math.min(a.right-p.width,innerWidth-p.width-8))+'px';
+ uiColorPopup.style.top=Math.max(8,Math.min(a.bottom+6+p.height<=innerHeight?a.bottom+6:a.top-p.height-6,innerHeight-p.height-8))+'px';
+}
+function uiColorOpen(target,anchor){
+ if(uiColorTarget===target&&!uiColorPopup.hidden){uiColorClose(true);return}
+ uiColorClose();uiColorTarget=target;uiColorAnchor=anchor;anchor.setAttribute('aria-expanded','true');
+ const title=target.getAttribute('aria-label')||target.title||target.labels?.[0]?.textContent?.trim()||'Color';
+ uiColorPopup.innerHTML='<div class="ui-color-head"><strong></strong><button class="ui-color-close" type="button" aria-label="Close color palette">×</button></div><div class="ui-color-row"><div class="ui-color-sample"></div><label>HEX <input id="uiColorHex" type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label="HEX color" placeholder="#RRGGBB"></label><button class="btn small primary" id="uiColorApply" type="button">Apply</button></div><div class="ui-color-error" role="status"></div><div class="ui-color-label">Recent colors</div><div class="ui-color-swatches"></div><button class="btn small ui-color-eye" id="uiColorEye" type="button">Pick color from screen</button><small class="ui-color-note"></small>';
+ uiColorPopup.querySelector('strong').textContent=title;
+ const input=$('#uiColorHex'),sample=uiColorPopup.querySelector('.ui-color-sample'),apply=$('#uiColorApply'),error=uiColorPopup.querySelector('.ui-color-error'),eye=$('#uiColorEye');
+ input.value=uiColorHex(target.value)||'#000000';
+ function validate(){const hex=uiColorHex(input.value);apply.disabled=!hex;input.setAttribute('aria-invalid',String(!hex));sample.style.backgroundColor=hex||'transparent';error.textContent=hex?'':'Enter a 3- or 6-digit HEX color.';return hex}
+ input.oninput=validate;input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(validate())uiColorApply(input.value)}});
+ apply.onclick=()=>{if(validate())uiColorApply(input.value)};
+ uiColorPopup.querySelector('.ui-color-close').onclick=()=>uiColorClose(true);
+ const swatches=uiColorPopup.querySelector('.ui-color-swatches');
+ if(!uiColorRecent.length){const empty=document.createElement('small');empty.textContent='Colors you use will appear here.';swatches.append(empty)}
+ for(const c of uiColorRecent){const b=document.createElement('button');b.type='button';b.className='ui-color-chip';b.style.backgroundColor=c;b.title=c;b.setAttribute('aria-label','Apply '+c);b.onclick=()=>uiColorApply(c);swatches.append(b)}
+ const available=typeof window.EyeDropper==='function';eye.disabled=!available;
+ uiColorPopup.querySelector('.ui-color-note').textContent=available?'Choose a pixel anywhere on your screen. Esc cancels.':'Screen eyedropper unavailable in this browser. Use HEX or the native picker.';
+ eye.onclick=async()=>{if(!available)return;const original=uiColorTarget;eye.disabled=true;try{const result=await new window.EyeDropper().open();if(uiColorTarget===original)uiColorApply(result.sRGBHex)}catch(e){if(uiColorTarget===original&&e.name!=='AbortError')error.textContent='Screen color could not be sampled. Use the native picker or HEX.'}finally{if(eye.isConnected)eye.disabled=false}};
+ uiColorPopup.hidden=false;validate();uiColorPosition();input.focus({preventScroll:true});input.select();
+}
+function uiColorEnhance(input){
+ if(input.dataset.uiColorEnhanced||input.closest('#uiColorPopup'))return;
+ input.dataset.uiColorEnhanced='1';const anchor=document.createElement('button');anchor.type='button';anchor.className='ui-color-more';anchor.setAttribute('aria-label','Open color palette'+(input.id?' for '+input.id:''));anchor.setAttribute('aria-haspopup','dialog');anchor.setAttribute('aria-expanded','false');anchor.title='HEX, recent colors and eyedropper';
+ anchor.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5l5 5M17 3l4 4-3 3-4-4zM15 8L5 18l-1 3 3-1L17 10"/></svg><span>HEX</span>';
+ anchor.disabled=input.disabled;anchor.onclick=e=>{e.preventDefault();e.stopPropagation();if(!input.disabled)uiColorOpen(input,anchor)};
+ input.after(anchor);
+}
+function uiColorScan(root){if(root.nodeType!==1&&root.nodeType!==9)return;if(root.matches?.('input[type=color]'))uiColorEnhance(root);for(const input of root.querySelectorAll('input[type=color]'))uiColorEnhance(input)}
+uiColorScan(document);
+const uiColorObserver=new MutationObserver(records=>{
+ if(uiColorTarget&&!uiColorTarget.isConnected)uiColorClose();
+ for(const rec of records)for(const node of rec.addedNodes)uiColorScan(node);
+});uiColorObserver.observe(document.body,{childList:true,subtree:true});
+document.addEventListener('change',e=>{const el=e.target;if(el.matches?.('input[type=color]')||['penFillHex','penOutlineHex','pathFillHex','pathOutlineHex'].includes(el.id))uiColorRecord(el.value)},true);
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-swatch],[data-multi-swatch]');if(b)uiColorRecord(b.dataset.swatch||b.dataset.multiSwatch)},true);
+document.addEventListener('pointerdown',e=>{if(!uiColorPopup.hidden&&!uiColorPopup.contains(e.target)&&!uiColorAnchor?.contains(e.target))uiColorClose()},true);
+document.addEventListener('keydown',e=>{if(!uiColorPopup.hidden&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();uiColorClose(true)}},true);
+window.addEventListener('resize',()=>{if(!uiColorPopup.hidden)uiColorClose()});
+document.addEventListener('scroll',e=>{if(!uiColorPopup.hidden&&!uiColorPopup.contains(e.target))uiColorPosition()},true);
+const uiColorCss=document.createElement('style');uiColorCss.id='uiReviewColors';uiColorCss.textContent=[
+'.ui-color-more{display:inline-flex;align-items:center;justify-content:center;gap:3px;vertical-align:middle;border:1px solid #d6e1ea;border-radius:5px;background:#fff;color:#426b86;font:600 10px/1.2 inherit;font-family:inherit;font-size:10px;font-weight:650;padding:4px 5px;min-height:25px;cursor:pointer;flex:none;white-space:nowrap}.ui-color-more:hover,.ui-color-more[aria-expanded=true]{background:#e8f1f8;border-color:#90b3ca}.ui-color-more:disabled{opacity:.5;cursor:default}.ui-color-more svg{flex:none}.field>.ui-color-more{align-self:flex-end}.page-color-control .ui-color-more span,.pen-paint-field .ui-color-more span{display:none}',
+'#uiColorPopup{position:fixed;z-index:2147483000;width:min(280px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;box-sizing:border-box;padding:12px;background:white;color:#36566b;border:1px solid #c9dbe6;border-radius:9px;box-shadow:0 6px 24px #29465725;font-size:12px;font-family:inherit}#uiColorPopup[hidden]{display:none!important}.ui-color-head,.ui-color-row{display:flex;align-items:center;gap:7px}.ui-color-head{justify-content:space-between;margin-bottom:10px}.ui-color-close{border:0;background:#f0f5f9;color:#426b86;border-radius:4px;width:25px;height:25px;font-size:18px;cursor:pointer}.ui-color-sample{height:31px;width:31px;flex:none;border:1px solid #d6e1ea;border-radius:5px}.ui-color-row label{display:flex;align-items:center;gap:5px;flex:1;min-width:0;font-size:10px;font-weight:700}.ui-color-row input{width:100%;min-width:0;padding:6px;border:1px solid #ccdce6;border-radius:5px;color:#294657;font:12px ui-monospace,monospace}.ui-color-row input[aria-invalid=true]{border-color:#b65959}.ui-color-error{font-size:10px;color:#a33e3e;min-height:12px;margin:3px 0}.ui-color-label{font-size:11px;font-weight:700;margin-bottom:6px}.ui-color-swatches{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}.ui-color-chip{width:25px;height:25px;border:1px solid #74869666;border-radius:5px;cursor:pointer}.ui-color-chip:hover{outline:2px solid #527a94;outline-offset:1px}.ui-color-eye{width:100%}.ui-color-note{display:block;color:#637c8c;font-size:10px;line-height:1.4;margin-top:6px}#uiColorPopup button:focus-visible,#uiColorPopup input:focus-visible,.ui-color-more:focus-visible{outline:2px solid #527a94;outline-offset:2px}'
+].join('\n');document.head.append(uiColorCss);
 
 nxFitAvailable();
 </script>
