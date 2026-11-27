@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use SCiFi Studio in your research, please cite this software."
+title: "SCiFi Studio — Stem Cell integrated Figure illustrator"
+type: software
+authors:
+  - family-names: Dobner
+    given-names: Jochen
+    affiliation: "IUF - Leibniz-Institut für umweltmedizinische Forschung GmbH"
+repository-code: "https://github.com/j-dobner/SCiFi-Studio"
+abstract: "Offline-first, human-directed and AI-assisted scientific vector figure editor for stem cell research, developmental biology, molecular biology and laboratory workflows."
