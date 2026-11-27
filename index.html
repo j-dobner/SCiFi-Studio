@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.5 — Figure typography review</title>
+<title>SCiFi Studio v23.6 — Figure line widths review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.5 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.6 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -4273,6 +4273,131 @@ uiReviewPaths.figureType='<path d="M3 5h12M9 5v15M5 20h8M15 10h6M18 10v10M16 20h
 const uiTypeButton=nxButton('uiFigureTypographyBtn','Typography',uiTypeDialog,$('#uiFigureColorsBtn').parentElement);
 uiTypeButton.classList.add('ui-review-icon');uiReviewToolLabel(uiTypeButton,'figureType','Typography');uiTypeButton.title='Inspect and selectively replace existing fonts and nominal text sizes';
 const uiTypeCss=document.createElement('style');uiTypeCss.textContent='.ui-type-rows{max-height:210px;overflow:auto;border:1px solid #d6e1ea;border-radius:6px;padding:4px 8px;margin:6px 0 10px}.ui-type-row{display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(100px,1fr);align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e8eef3}.ui-type-row:last-child{border-bottom:0}.ui-type-row strong,.ui-type-row small{display:block;font-size:11px;overflow-wrap:anywhere}.ui-type-row small{color:#607b8b;font-size:10px}.ui-type-row input,.ui-type-row select{min-width:0;width:100%;font-size:12px}.ui-type-row [aria-invalid=true]{border-color:#b54848}';document.head.append(uiTypeCss);
+
+/* Incremental v23.6: selective visible stroke-width replacement in physical units. */
+const uiWidthRoles=[['shape','Shape outlines'],['path','Bézier paths'],['arrow','Lines and arrows'],['box','Text-box borders']];
+function uiWidthVisit(items,visit,allowed=null,scale=1,distorted=false,depth=0){
+ if(!Array.isArray(items)||depth>8||!Number.isFinite(scale)||scale<=0)return;
+ for(const o of items.slice(0,depth?2000:5000)){
+  if(!o||o.hidden||o.locked||o.opacity===0||o.type==='reference'||(depth===0&&allowed&&!allowed.has(o.id)))continue;
+  if(o.type==='symbol'){
+   const sx=Math.max(1,o.w)/Math.max(1,+o.sourceW||100),sy=Math.max(1,o.h)/Math.max(1,+o.sourceH||100);
+   // Area-equivalent scale is a nominal width, not an exact directional
+   // stroke measurement when the symbol has been stretched anisotropically.
+   uiWidthVisit(o.children,visit,null,scale*Math.sqrt(sx*sy),distorted||Math.abs(sx/sy-1)>1e-6,depth+1);continue
+  }
+  let role,key,width,min=0,max=35,color;
+  if(o.type==='path'){
+   role='path';key='strokeWidth';width=o.strokeWidth??3;color=o.color||'#4E9DAB';max=80;
+   if(!pathNodesOk(o.nodes))continue
+  }else if(o.type==='shape'||o.type==='rect'){
+   role='shape';key='strokeWidth';width=o.strokeWidth??2;color=o.strokeColor||'#4a8593'
+  }else if(o.type==='arrow'){
+   role='arrow';key='strokeWidth';width=o.strokeWidth||3;color=o.color;
+   if(Math.hypot(o.x2-o.x,o.y2-o.y)<.001)continue
+  }else if(o.type==='text'&&o.textBoxMode==='fixed'&&o.textBoxBorderEnabled){
+   role='box';key='textBoxBorderWidth';width=Math.max(.5,Math.min(24,Number(o.textBoxBorderWidth)||1));color=o.textBoxBorderColor;min=.5;max=24
+  }else continue;
+  if(!uiFigureColorHex(color)||!Number.isFinite(+width)||+width<=0)continue;
+  const value=uiTypeSizeKey(+width,scale);
+  visit({role,value,scale,distorted,object:o,key,min,max,set:v=>{o[key]=v}})
+ }
+}
+function uiWidthInventory(scope,roles){
+ const rows=new Map();
+ for(const p of uiFigureColorPages(scope))uiWidthVisit(p.items,s=>{
+  if(!roles.has(s.role))return;
+  let row=rows.get(s.value);
+  if(!row){row={value:s.value,count:0,roles:new Set(),distorted:0};rows.set(s.value,row)}
+  row.count++;row.roles.add(s.role);if(s.distorted)row.distorted++
+ },p.allowed);
+ return [...rows.values()].sort((a,b)=>Number(a.value)-Number(b.value))
+}
+function uiWidthReplace(page,roles,mapping){
+ const changed=new Set();let slots=0,distorted=0,arrows=0;
+ uiWidthVisit(page.items,s=>{
+  if(!roles.has(s.role)||!mapping.has(s.value))return;
+  const target=Number(mapping.get(s.value));if(target===Number(s.value))return;
+  const local=target*96/72/s.scale;
+  if(!Number.isFinite(local)||local<=0||local<s.min-1e-8||local>s.max+1e-8)
+   throw Error(s.value+' pt → '+target+' pt is outside the native width range for '+uiWidthRoles.find(v=>v[0]===s.role)[1].toLowerCase()+' on '+page.name+'. Choose another width or narrow the scope.');
+  s.set(Math.max(s.min,Math.min(s.max,local)));slots++;changed.add(s.object);
+  if(s.distorted)distorted++;
+  if(s.role==='arrow'&&((s.object.startHead||'none')!=='none'||(s.object.endHead??'open')!=='none'))arrows++
+ },page.allowed);
+ return {slots,objects:changed.size,distorted,arrows}
+}
+function uiWidthPlan(scope,roles,mapping){
+ if(!['selection','page','all'].includes(scope))throw Error('Invalid scope.');
+ if(scope==='selection'&&!selectedIds.size)throw Error('Select objects first.');
+ if(iconWorkspace&&scope==='all')throw Error('Finish icon editing before editing all pages.');
+ const plans=[];
+ for(const p of uiFigureColorPages(scope)){
+  const next={...p,items:structuredClone(p.items)},result=uiWidthReplace(next,roles,mapping);
+  if(result.slots)plans.push({p,next,result})
+ }
+ return plans
+}
+function uiWidthDialog(){
+ if(uiPainterMode)uiPainterStop();closeTextEditor(true);
+ modal('<h2>Figure line widths</h2><p>Inspect existing visible native strokes and replace individual widths in points (1 pt = 96/72 design pixels). Preview the result without modifying your artwork.</p><div class="nx-grid"><label class="nx-field">Scope<select id="uiWidthScope"><option value="selection">Selected objects</option><option value="page">Current page</option><option value="all">All pages</option></select></label><label class="nx-field">Preview page<select id="uiWidthPage"></select></label></div><div class="nx-checks" id="uiWidthRoles"></div><div class="ui-fig-color-preview"><svg id="uiWidthPreview" xmlns="http://www.w3.org/2000/svg" aria-label="Line width preview"></svg></div><div class="actiongrid"><button class="btn small" id="uiWidthBefore">Before</button><button class="btn small active" id="uiWidthAfter">After</button><button class="btn small" id="uiWidthReset">Reset replacements</button></div><h3>Existing line widths (pt)</h3><div id="uiWidthRows" class="ui-type-rows"></div><p id="uiWidthSummary" role="status"></p><p id="uiWidthWarning" class="hint" role="status"></p><div class="actiongrid"><button class="btn primary" id="uiWidthApply">Apply line widths</button><button class="btn" id="uiWidthCancel">Cancel</button></div><p class="hint">Only existing visible native strokes are changed. No-outline objects remain unchanged. Widths inside uniformly scaled illustrations are measured on the page; stretched illustrations use an approximate area-equivalent width. Arrowhead styles, dash styles, colors and geometry are preserved, but arrowhead size follows the existing width-dependent sizing rule. Imported artwork, plots, QC cards and hidden/locked parts are excluded. All-page undo is separate per page. Changing scope or filters resets pending replacements.</p>');
+ const scope=$('#uiWidthScope'),pageSelect=$('#uiWidthPage'),root=$('#uiWidthPreview'),roles=new Set(uiWidthRoles.map(v=>v[0])),mapping=new Map(),invalid=new Set();
+ let rows=[],after=true,frame=0;
+ scope.value=selectedIds.size?'selection':'page';scope.querySelector('[value=selection]').disabled=!selectedIds.size;scope.querySelector('[value=all]').disabled=!!iconWorkspace;
+ function preview(){
+  if(!root.isConnected||$('#modalOverlay').classList.contains('hidden'))return;
+  let plans=[],problem='';try{if(invalid.size)throw Error('Enter positive numeric widths.');plans=uiWidthPlan(scope.value,roles,mapping)}catch(e){problem=e.message}
+  const slots=plans.reduce((n,p)=>n+p.result.slots,0),distorted=plans.reduce((n,p)=>n+p.result.distorted,0),arrows=plans.reduce((n,p)=>n+p.result.arrows,0);
+  $('#uiWidthSummary').textContent=rows.length+' distinct nominal widths · '+slots+' strokes affected on '+plans.length+' page(s)';
+  $('#uiWidthWarning').textContent=problem||[distorted?distorted+' changed stroke(s) in stretched illustrations have direction-dependent actual widths.':'',arrows?arrows+' arrowhead(s) may resize with their shafts.':''].filter(Boolean).join(' ');
+  $('#uiWidthApply').disabled=!!problem||!slots;
+  const source=uiFigureColorPages(scope.value).find(p=>p.id===pageSelect.value);
+  if(source)uiFigureColorPreview(root,after&&!problem?(plans.find(p=>p.p.id===source.id)?.next||source):source,new Map(),new Set(),false)
+ }
+ function schedule(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;preview()})}
+ function renderRows(){
+  const list=$('#uiWidthRows');list.replaceChildren();
+  if(!rows.length){list.textContent='No visible editable strokes in this scope.';return}
+  for(const entry of rows.slice(0,300)){
+   const row=document.createElement('div');row.className='ui-type-row';row.dataset.widthSource=entry.value;
+   const label=document.createElement('div'),name=document.createElement('strong'),meta=document.createElement('small');
+   name.textContent=Number(entry.value).toLocaleString(undefined,{maximumSignificantDigits:6})+' pt';meta.textContent=entry.count+' · '+[...entry.roles].map(k=>uiWidthRoles.find(v=>v[0]===k)[1]).join(', ')+(entry.distorted?' · '+entry.distorted+' approximate':'');label.append(name,meta);
+   const arrow=document.createElement('span');arrow.textContent='→';arrow.setAttribute('aria-hidden','true');
+   const field=document.createElement('input');field.type='number';field.step='any';field.min='0.00000001';field.inputMode='decimal';field.value=mapping.get(entry.value)??entry.value;field.setAttribute('aria-label','Replacement for '+name.textContent);
+   field.oninput=()=>{
+    const v=field.valueAsNumber;if(!Number.isFinite(v)||v<=0){invalid.add(entry.value);field.setAttribute('aria-invalid','true')}
+    else{invalid.delete(entry.value);field.removeAttribute('aria-invalid');if(v===Number(entry.value))mapping.delete(entry.value);else mapping.set(entry.value,v)}
+    schedule()
+   };
+   row.append(label,arrow,field);list.append(row)
+  }
+  if(rows.length>300){const note=document.createElement('p');note.textContent='Showing 300 widths. Narrow the scope or role filters to edit others.';list.append(note)}
+ }
+ function refresh(){
+  mapping.clear();invalid.clear();rows=uiWidthInventory(scope.value,roles);
+  const old=pageSelect.value,candidates=uiFigureColorPages(scope.value);pageSelect.replaceChildren();
+  for(const p of candidates){const option=document.createElement('option');option.value=p.id;option.textContent=p.name;pageSelect.append(option)}
+  pageSelect.value=candidates.some(p=>p.id===old)?old:activePageId;renderRows();preview()
+ }
+ for(const [key,title] of uiWidthRoles){
+  const label=document.createElement('label'),c=document.createElement('input');c.type='checkbox';c.checked=true;c.dataset.widthRole=key;
+  c.onchange=()=>{if(c.checked)roles.add(key);else roles.delete(key);refresh()};label.append(c,document.createTextNode(' '+title));$('#uiWidthRoles').append(label)
+ }
+ scope.onchange=refresh;pageSelect.onchange=preview;
+ const compare=value=>{after=value;$('#uiWidthBefore').classList.toggle('active',!after);$('#uiWidthAfter').classList.toggle('active',after);preview()};
+ $('#uiWidthBefore').onclick=()=>compare(false);$('#uiWidthAfter').onclick=()=>compare(true);
+ $('#uiWidthReset').onclick=()=>{mapping.clear();invalid.clear();renderRows();preview()};$('#uiWidthCancel').onclick=closeModal;
+ $('#uiWidthApply').onclick=()=>{try{
+  if(invalid.size)throw Error('Enter valid replacement widths.');
+  const plans=uiWidthPlan(scope.value,roles,mapping);if(!plans.length)return;
+  if(scope.value==='all'&&!confirm('Apply these line widths across '+plans.length+' page(s)? Undo is separate on each page.'))return;
+  uiTypeCommit(plans);closeModal();showToast(plans.reduce((sum,p)=>sum+p.result.slots,0)+' stroke widths updated')
+ }catch(e){showToast(e.message)}};
+ refresh()
+}
+uiReviewPaths.figureWidth='<path d="M4 5h16M4 12h16M4 19h16" stroke-linecap="round"/><path d="M4 12h16" stroke-width="2.8"/><path d="M4 19h16" stroke-width="4"/>';
+const uiWidthButton=nxButton('uiFigureWidthsBtn','Line widths',uiWidthDialog,$('#uiFigureTypographyBtn').parentElement);
+uiWidthButton.classList.add('ui-review-icon');uiReviewToolLabel(uiWidthButton,'figureWidth','Line widths');uiWidthButton.title='Inspect and selectively replace visible stroke widths in physical points';
 
 nxFitAvailable();
 </script>

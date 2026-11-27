@@ -485,6 +485,63 @@ with sync_playwright() as p:
         page.evaluate("activatePage(pages[0].id);undo()")
         assert page.evaluate("JSON.stringify(objects)===window.typeOriginal")
         page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
+        # v23.6: selective line widths, nested scaling, exclusions, preview and undo.
+        page.evaluate("""() => {
+            const a=rect(10,10,50,40,'#123456',4);a.strokeColor='#234567';a.strokeWidth=2;a.dashStyle='dashed';
+            const b=line(70,20,110,40,'#345678',2);b.endHead='triangle';
+            const c=rect(5,5,50,40,'#abcdef',0);c.strokeWidth=4;
+            const sym={id:uid(),type:'symbol',name:'Width test',x:10,y:100,w:100,h:50,sourceW:200,sourceH:100,children:[c],opacity:1,rotation:0};
+            const no=rect(150,10,30,30,'#abcdef',0);no.strokeColor='none';no.strokeWidth=2;
+            const zero=rect(190,10,30,30,'#abcdef',0);zero.strokeWidth=0;
+            const lock=rect(230,10,30,30,'#abcdef',0);lock.strokeWidth=2;lock.locked=true;
+            const box=txt('Box',20,200,20);box.textBoxMode='fixed';box.textBoxBorderEnabled=true;box.textBoxBorderColor='#123456';box.textBoxBorderWidth=2;
+            objects=[a,b,sym,no,zero,lock,box];selectOnly(null);render();window.widthOriginal=JSON.stringify(objects)
+        }""")
+        page.locator("#uiFigureWidthsBtn").click()
+        assert "4 ·" in page.locator("[data-width-source='1.5']").inner_text()
+        page.locator("[data-width-role=arrow]").uncheck()
+        assert "3 ·" in page.locator("[data-width-source='1.5']").inner_text()
+        page.locator("[data-width-source='1.5'] input").fill("0.75")
+        page.wait_for_function("() => !document.querySelector('#uiWidthApply').disabled")
+        assert page.evaluate("JSON.stringify(objects)===window.widthOriginal")
+        page.locator("#uiWidthBefore").click()
+        page.locator("#uiWidthAfter").click()
+        page.locator("#uiWidthCancel").click()
+        assert page.evaluate("JSON.stringify(objects)===window.widthOriginal")
+        page.locator("#uiFigureWidthsBtn").click()
+        page.locator("[data-width-role=arrow]").uncheck()
+        page.locator("[data-width-source='1.5'] input").fill("0.75")
+        page.wait_for_function("() => !document.querySelector('#uiWidthApply').disabled")
+        page.locator("#uiWidthApply").click()
+        assert page.evaluate("objects[0].strokeWidth") == 1
+        assert page.evaluate("objects[0].dashStyle") == "dashed"
+        assert page.evaluate("objects[0].strokeColor") == "#234567"
+        assert page.evaluate("objects[1].strokeWidth") == 2
+        assert page.evaluate("objects[2].children[0].strokeWidth") == 2
+        assert page.evaluate("objects[3].strokeWidth") == 2
+        assert page.evaluate("objects[4].strokeWidth") == 0
+        assert page.evaluate("objects[5].strokeWidth") == 2
+        assert page.evaluate("objects[6].textBoxBorderWidth") == 1
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.widthOriginal")
+        # Reject unsupported width values before modifying any page.
+        assert page.evaluate("""() => {try{uiWidthPlan('page',new Set(['shape','box']),new Map([['1.5',1000]]));return false}catch{return JSON.stringify(objects)===window.widthOriginal}}""")
+        # Stretched symbols are identified and reported as approximate.
+        assert page.evaluate("""() => {
+            const s=structuredClone(objects[2]);s.w=200;
+            const p={name:'Stretch test',items:[s],allowed:null};
+            const rows=[];uiWidthVisit(p.items,v=>rows.push(v));
+            return rows.length===1 && rows[0].distorted
+        }""")
+        page.evaluate("""() => {
+            appendPage(false);const a=rect(10,10,30,30,'#abcdef',0);a.strokeWidth=2;objects=[a];render();
+            uiTypeCommit(uiWidthPlan('all',new Set(['shape']),new Map([['1.5',.75]])))
+        }""")
+        assert page.evaluate("objects[0].strokeWidth") == 1
+        assert page.evaluate("pages[0].elements[0].strokeWidth") == 1
+        page.evaluate("activatePage(pages[0].id);undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.widthOriginal")
+        page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {
