@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.1 — Recovery review</title>
+<title>SCiFi Studio v23.2 — Format painter review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.1 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.2 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -3684,6 +3684,134 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 setInterval(()=>uiRecSave(),15000);
 window.scifiRecoveryNewDocument=uiRecRotate;
 uiRecInit();
+
+/* Incremental v23.2: explicit, selective appearance transfer for native objects. */
+let uiPainterSource=null,uiPainterSourceLabel='',uiPainterMode=false,uiPainterFlags=null;
+const uiPainterNames={text:'Text',shape:'Shape',rect:'Rectangle',path:'Path',arrow:'Line / arrow'};
+const uiPainterOptions=[
+ ['fill','Fill color and gradient'],
+ ['stroke','Outline / line color'],
+ ['line','Line width and dash style'],
+ ['heads','Arrowheads'],
+ ['opacity','Opacity'],
+ ['textColor','Text color'],
+ ['font','Font family'],
+ ['size','Font size'],
+ ['emphasis','Bold, italic and underline'],
+ ['box','Fixed text-box background and border']
+];
+function uiPainterSupported(o){return !!o&&!o.hidden&&!o.locked&&Object.hasOwn(uiPainterNames,o.type)}
+function uiPainterKind(o){return ['shape','rect'].includes(o?.type)?'shape':o?.type}
+function uiPainterColor(v,fallback){return v==='none'||/^#[0-9a-f]{6}$/i.test(v||'')?v:fallback}
+function uiPainterGet(o){
+ if(!uiPainterSupported(o))return {};
+ const p={opacity:{opacity:o.opacity??1}},kind=uiPainterKind(o);
+ if(kind==='shape'||kind==='path'){
+  p.fill={color:uiPainterColor(kind==='path'?o.fillColor:o.type==='rect'?o.fill||o.color:o.color,kind==='path'?'none':'#5576d9'),gradient:nxPaint(o.fillGradient)};
+  p.stroke={color:uiPainterColor(kind==='path'?o.color:o.strokeColor,kind==='path'?'#4E9DAB':'#4a8593')};
+  p.line={strokeWidth:o.strokeWidth??(kind==='path'?3:2),dashStyle:o.dashStyle||'solid'};
+ }else if(kind==='arrow'){
+  p.stroke={color:uiPainterColor(o.color,'#8092ad')};p.line={strokeWidth:o.strokeWidth||3,dashStyle:o.dashStyle||'solid'};
+  p.heads={startHead:o.startHead||'none',endHead:o.endHead===undefined?'open':o.endHead};
+ }else if(kind==='text'){
+  const style=richStyle(o);
+  p.textColor={color:style.color};p.font={fontFamily:style.fontFamily};p.size={fontSize:style.fontSize};p.emphasis={fontWeight:style.fontWeight,italic:style.italic,underline:style.underline};
+  if(o.textBoxMode==='fixed')p.box={textBoxBgEnabled:!!o.textBoxBgEnabled,textBoxBgColor:uiPainterColor(o.textBoxBgColor,'#F3F6FB'),textBoxBorderEnabled:!!o.textBoxBorderEnabled,textBoxBorderColor:uiPainterColor(o.textBoxBorderColor,'#9CB2CA'),textBoxBorderWidth:o.textBoxBorderWidth||1};
+ }
+ return p;
+}
+function uiPainterCompatible(source,target,key){
+ if(!uiPainterSupported(target)||!source?.parts[key])return false;
+ if(key==='opacity')return true;
+ const t=uiPainterKind(target),s=source.kind;
+ if(key==='fill')return ['shape','path'].includes(s)&&['shape','path'].includes(t);
+ if(key==='stroke'||key==='line')return ['shape','path','arrow'].includes(s)&&['shape','path','arrow'].includes(t);
+ if(key==='heads')return s==='arrow'&&t==='arrow';
+ if(key==='box')return s==='text'&&t==='text'&&target.textBoxMode==='fixed';
+ return s==='text'&&t==='text';
+}
+function uiPainterCapture(o){
+ if(!uiPainterSupported(o))throw Error('Select one unlocked native text, shape, path or arrow.');
+ uiPainterSource={kind:uiPainterKind(o),parts:structuredClone(uiPainterGet(o))};
+ uiPainterSourceLabel=o.type==='text'?String(o.text||'Text').slice(0,50):uiPainterNames[o.type];
+ uiPainterFlags=new Set(Object.keys(uiPainterSource.parts));uiPainterFlags.delete('heads');uiPainterFlags.delete('opacity');uiPainterFlags.delete('box');
+ return uiPainterSource;
+}
+function uiPainterApplyOne(target,source,flags){
+ if(!uiPainterSupported(target))return false;
+ const before=JSON.stringify(target),kind=uiPainterKind(target),richKeys=[];
+ for(const key of flags){
+  if(!uiPainterCompatible(source,target,key))continue;
+  const value=structuredClone(source.parts[key]);
+  if(key==='fill'){
+   if(kind==='path')target.fillColor=value.color;
+   else if(target.type==='rect')target.fill=target.color=value.color;
+   else target.color=value.color;
+   if(value.gradient)target.fillGradient=value.gradient;else delete target.fillGradient;
+  }else if(key==='stroke'){
+   if(kind==='path')target.color=target.strokeColor=value.color;
+   else if(kind==='arrow'){if(value.color!=='none')target.color=value.color}
+   else target.strokeColor=value.color;
+  }else{
+   Object.assign(target,value);
+   if(['textColor','font','size','emphasis'].includes(key))richKeys.push(...Object.keys(value));
+  }
+ }
+ // Base formatting is applied uniformly for selected attributes; unrelated runs,
+ // including superscript/subscript, tracking, highlights and strike, are retained.
+ if(kind==='text'&&richKeys.length){
+  if(Array.isArray(target.richRuns))target.richRuns=target.richRuns.map(r=>{const style={...r.style};for(const k of richKeys)delete style[k];return {...r,style}}).filter(r=>Object.keys(r.style).length);
+  // Only auto-size text reflows; fixed text-box geometry never changes.
+  if(richKeys.some(k=>k!=='color'))scifiUpdateTextGeometry(target);
+ }
+ return before!==JSON.stringify(target)
+}
+function uiPainterApply(targets,source=uiPainterSource,flags=uiPainterFlags){
+ if(!source||!flags?.size)throw Error('Copy a source style and select at least one formatting attribute.');
+ const editable=targets.filter(o=>uiPainterSupported(o)&&[...flags].some(k=>uiPainterCompatible(source,o,k)));
+ if(!editable.length)throw Error('No compatible unlocked objects selected.');
+ let count=0;transact(()=>{for(const o of editable)if(uiPainterApplyOne(o,source,flags))count++});
+ return {changed:count,skipped:targets.length-editable.length};
+}
+function uiPainterResult(result){return result.changed+' updated'+(result.skipped?' · '+result.skipped+' incompatible/locked skipped':'')}
+function uiPainterStatus(){const b=$('#uiPainterBtn');b.classList.toggle('active',uiPainterMode);b.setAttribute('aria-pressed',String(uiPainterMode));b.title=uiPainterMode?'Format painter active. Click a compatible object or press Esc to stop.':'Copy selected formatting between native objects';stage.classList.toggle('ui-painter-active',uiPainterMode)}
+function uiPainterStop(){if(!uiPainterMode)return;uiPainterMode=false;uiPainterStatus();showToast('Format painter stopped')}
+function uiPainterStart(){if(!uiPainterSource||!uiPainterFlags?.size)throw Error('Choose at least one formatting attribute.');setTool('select');uiPainterMode=true;uiPainterStatus();showToast('Click compatible objects to apply style · Esc to finish')}
+function uiPainterDialog(){
+ if(uiPainterMode){uiPainterStop();return}
+ modal('<h2>Format painter</h2><p>Select one native object as the formatting source. Select which appearance attributes to copy, then apply to the current selection or paint onto objects by clicking them.</p><div class="actiongrid"><button class="btn" id="uiPainterCopy">Copy selected object</button><button class="btn" id="uiPainterClear">Clear copied style</button></div><div id="uiPainterInfo"></div><div id="uiPainterAttributes" class="nx-checks"></div><p id="uiPainterHint" class="hint"></p><div class="actiongrid"><button class="btn primary" id="uiPainterApply">Apply to selection</button><button class="btn" id="uiPainterPaint">Paint by clicking</button></div><p class="hint">Only native objects are supported. Grouped targets can be selected as a group for compatible-part application; click painting changes only the clicked native component. Scientific icon symbols and imported image/SVG objects are not recolored. Fixed boxes, shape dimensions, path geometry, text content and connector attachments are preserved. Auto-size text can reflow. Base text attributes override matching rich-text runs; other character formatting is preserved.</p>');
+ const refresh=()=>{
+  const info=$('#uiPainterInfo'),root=$('#uiPainterAttributes');info.replaceChildren();root.replaceChildren();
+  const heading=document.createElement('p');heading.textContent=uiPainterSource?'Copied style: '+uiPainterSourceLabel:'No copied style yet.';info.append(heading);
+  for(const [key,label] of uiPainterOptions){if(!uiPainterSource?.parts[key])continue;const l=document.createElement('label'),c=document.createElement('input');c.type='checkbox';c.checked=uiPainterFlags.has(key);c.dataset.paintAttr=key;c.onchange=()=>{if(c.checked)uiPainterFlags.add(key);else uiPainterFlags.delete(key);update()};l.append(c,document.createTextNode(' '+label));
+   const part=uiPainterSource.parts[key],color=part.color;if(color&&color!=='none'){const sw=document.createElement('span');sw.className='ui-paint-swatch';sw.style.backgroundColor=color;sw.title=color;l.append(sw)}root.append(l)
+  }
+  update()
+ };
+ function update(){const valid=selectedObjs().filter(o=>uiPainterFlags&&[...uiPainterFlags].some(k=>uiPainterCompatible(uiPainterSource,o,k))).length;
+  $('#uiPainterCopy').disabled=!uiPainterSupported(selectedObj());$('#uiPainterClear').disabled=!uiPainterSource;
+  $('#uiPainterApply').disabled=!uiPainterFlags?.size||!valid;$('#uiPainterPaint').disabled=!uiPainterFlags?.size;
+  $('#uiPainterHint').textContent=uiPainterSource?valid+' compatible selected object(s).':'Select a source object on the canvas, then reopen Format painter.'}
+ $('#uiPainterCopy').onclick=()=>{try{uiPainterCapture(selectedObj());refresh()}catch(e){showToast(e.message)}};
+ $('#uiPainterClear').onclick=()=>{uiPainterSource=null;uiPainterFlags=null;uiPainterSourceLabel='';refresh()};
+ $('#uiPainterApply').onclick=()=>{try{const result=uiPainterApply(selectedObjs());closeModal();showToast(uiPainterResult(result))}catch(e){showToast(e.message)}};
+ $('#uiPainterPaint').onclick=()=>{try{closeModal();uiPainterStart()}catch(e){showToast(e.message)}};
+ refresh()
+}
+uiReviewPaths.paint='<rect x="3" y="3" width="14" height="7" rx="1"/><path d="M17 6h3v7h-8v4M10 17h4v5h-4z"/>';
+const uiPainterButton=nxButton('uiPainterBtn','Format painter',uiPainterDialog,$('#groupBtn').parentElement);
+uiPainterButton.classList.add('ui-review-icon');uiReviewToolLabel(uiPainterButton,'paint','Format painter');uiPainterStatus();
+const uiPainterStyle=document.createElement('style');uiPainterStyle.textContent='.ui-painter-active,.ui-painter-active *{cursor:crosshair!important}.ui-paint-swatch{display:inline-block;width:16px;height:16px;border:1px solid #aebfce;border-radius:3px;margin-left:8px;vertical-align:middle}#uiPainterInfo p{font-weight:650;margin:10px 0 6px}';document.head.append(uiPainterStyle);
+// Capture click-paint gestures before the existing selection/move/drawing handlers.
+stage.addEventListener('pointerdown',e=>{
+ if(!uiPainterMode||e.button!==0)return;e.preventDefault();e.stopImmediatePropagation();
+ const node=e.target.closest?.('[data-id]'),o=node&&objects.find(v=>v.id===node.dataset.id);
+ if(!o){showToast('Click an editable native object · Esc to finish');return}
+ try{const result=uiPainterApply([o]);showToast(uiPainterResult(result)+' · Esc to finish')}catch(err){showToast(err.message)}
+},true);
+document.addEventListener('keydown',e=>{if(uiPainterMode&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();uiPainterStop()}},true);
+const uiPainterToolBase=setTool;setTool=function(name){if(uiPainterMode)uiPainterStop();return uiPainterToolBase(name)};
+const uiPainterLoadBase=loadProjectData;loadProjectData=async function(data){uiPainterStop();uiPainterSource=null;uiPainterFlags=null;uiPainterSourceLabel='';return uiPainterLoadBase(data)};
 
 nxFitAvailable();
 </script>

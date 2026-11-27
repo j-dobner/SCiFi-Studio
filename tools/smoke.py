@@ -283,6 +283,46 @@ with sync_playwright() as p:
         assert page.locator("#scifiRepeatMode").input_value() == "auto"
         assert page.locator("#uiLibSize").input_value() == "normal"
         assert page.locator("#nxToggle-pages").get_attribute("aria-expanded") == "true"
+        # v23.2: selective native formatting, geometry preservation, and undo.
+        page.evaluate("""() => {
+            const source=rect(10,20,60,40,'#123456',5);
+            source.strokeColor='#234567';source.strokeWidth=4;source.dashStyle='dashed';
+            source.fillGradient={kind:'linear',angle:45,stops:[{offset:0,color:'#123456',opacity:1},{offset:1,color:'#ffffff',opacity:1}]};
+            const target={...rect(120,50,80,30,'#abcdef',8),type:'shape',shapeKind:'ellipse',rotation:20,opacity:.6,strokeColor:'#654321',strokeWidth:1};
+            objects=[source,target];selectOnly(source.id);render();
+        }""")
+        page.locator("#uiPainterBtn").click()
+        page.locator("#uiPainterCopy").click()
+        assert page.locator("[data-paint-attr=fill]").is_checked()
+        page.locator("[data-paint-attr=stroke]").uncheck()
+        page.locator("[data-paint-attr=line]").uncheck()
+        page.evaluate("closeModal();selectOnly(objects[1].id);render()")
+        page.locator("#uiPainterBtn").click()
+        page.locator("#uiPainterApply").click()
+        assert page.evaluate("objects[1].color") == "#123456"
+        assert page.evaluate("objects[1].fillGradient.stops[0].color") == "#123456"
+        assert page.evaluate("[objects[1].x,objects[1].y,objects[1].w,objects[1].h,objects[1].rotation,objects[1].opacity,objects[1].strokeWidth]") == [120,50,80,30,20,.6,1]
+        assert page.evaluate("objects[1].strokeColor") == "#654321"
+        page.evaluate("undo()")
+        assert page.evaluate("objects[1].color") == "#abcdef"
+        page.evaluate("""() => {
+            const s=txt('Source',10,10,24,'#abcdef',700);
+            const t=txt('H2O',150,70,12,'#112233',400);
+            t.textBoxMode='fixed';t.w=100;t.h=60;
+            t.richRuns=[{start:1,end:2,style:{script:'sub',color:'#ff0000',italic:true}}];
+            objects=[s,t];selectOnly(s.id);render();uiPainterCapture(s);
+            uiPainterApply([t],uiPainterSource,new Set(['textColor','size']));
+        }""")
+        assert page.evaluate("objects[1].text") == "H2O"
+        assert page.evaluate("objects[1].fontSize") == 24
+        assert page.evaluate("[objects[1].w,objects[1].h]") == [100,60]
+        assert page.evaluate("objects[1].richRuns[0].style.script") == "sub"
+        assert page.evaluate("objects[1].richRuns[0].style.italic") is True
+        assert page.evaluate("!('color' in objects[1].richRuns[0].style)")
+        page.evaluate("uiPainterStart()")
+        assert page.locator("#uiPainterBtn").get_attribute("aria-pressed") == "true"
+        page.keyboard.press("Escape")
+        assert page.locator("#uiPainterBtn").get_attribute("aria-pressed") == "false"
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {
