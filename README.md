@@ -14,6 +14,17 @@ v22.1 public preview · 27 November 2026
 
 The preview contains vector drawing and layout tools, editable paths and shapes, text and arrows, an icon editor, synthetic plot tools, local project import/export and 471 editable scientific illustrations: 329 molecular biology, 13 human organoids, 36 expanded cell atlas, 19 early progenitors, 17 original lineage illustrations, 34 embryogenesis illustrations and all 23 Carnegie stages. Molecular variants are grouped into families by default; enable **Show individual variants** for the complete count. Other unresolved private artwork, including laboratory essentials, branded instruments and legacy drawings, is excluded.
 
+## v23.1–23.6 — Publication workflow review
+
+- **23.1:** browser-local IndexedDB recovery checkpoint with recovery/discard/download controls; compatible-object appearance copy/apply.
+- **23.2:** exact native-object frame position and dimensions in physical units; replace native colors, standardize text/line styles across selection, page or project. All-page undo is separate per page. Fixed embedded SVG colors are not rewritten.
+- **23.3:** editable labeled panel grids, proportional arrangement of selected objects/groups, example 85/90/180 mm publication widths. Journal-specific requirements must be checked separately.
+- **23.4:** direct current-page, lossless RGB TIFF and raster PDF at selected DPI (20 MP limit; white transparency background). PDF page dimensions are retained; SVG remains the scalable vector export.
+- **23.5:** native raster image view metadata, crop, uniform brightness/contrast, user-calibrated scale bars, magnified inset with ROI, and downloadable image-processing log. Original source pixels remain unchanged; calibration must come from acquisition metadata.
+- **23.6:** advisory publication preflight for native fonts/lines, estimated raster resolution, boundaries, duplicate generated labels, imported provenance and schematic plots. Findings select the corresponding page/object and can be exported as JSON.
+
+Use the Publication menu in the existing toolbar and the Recovery button. These are experimental implementations; save separate copies of important projects. Recovery is browser-local, retains only the latest checkpoint, and does not replace project saving. The public release and artwork library remain unchanged.
+
 ## v23 UI review 7 — Workspace preferences
 
 Workspace preferences remember normal panel collapse states, widths, minimized-width restore values, Properties section states, ruler and grid visibility, snapping options, tool behavior and library display options locally in the browser. The Preferences button in the Edit tools header offers common settings and a reset to defaults. Focus canvas does not overwrite the usual panel configuration. Reset preserves current document data, page guides, favorites and recent colors/illustrations. Storage is browser-dependent, especially for renamed or moved standalone HTML files; if unavailable, preferences work for the current session only.

@@ -283,6 +283,41 @@ with sync_playwright() as p:
         assert page.locator("#scifiRepeatMode").input_value() == "auto"
         assert page.locator("#uiLibSize").input_value() == "normal"
         assert page.locator("#nxToggle-pages").get_attribute("aria-expanded") == "true"
+        # Publication tools: native formatting, panel labels, lossless export and recovery.
+        page.evaluate("setCanvasSize(480,320); objects=[]; selectOnly(null); render()")
+        page.evaluate("uiPubPanelGrid({cols:2,rows:2,margin:10,gap:10,fontPx:16,arrange:false})")
+        assert page.evaluate("objects.filter(o=>o.publicationPanelLabel).map(o=>o.text)") == ["A","B","C","D"]
+        page.evaluate("uiPubFormatApply({fontPx:20,strokePx:1},'page')")
+        assert page.evaluate("objects.filter(o=>o.type==='text').every(o=>o.fontSize===20)")
+        page.evaluate("selectOnly(objects.find(o=>o.type==='text').id);render();uiPubCopyStyle()")
+        page.evaluate("selectOnly(objects.filter(o=>o.type==='text')[1].id);render();uiPubApplyStyle()")
+        assert page.evaluate("selectedObj().fontSize") == 20
+        page.evaluate("uiPubPhysicalDialog()")
+        page.locator("#uiPosUnit").select_option("mm")
+        page.locator("#uiPosX").fill("10")
+        page.locator("#uiPosApply").click()
+        assert abs(page.evaluate("selectedObj().x")-96*10/25.4)<.001
+        assert page.evaluate("uiPubPreflight({dpi:300,font:20,stroke:.5}).some(v=>v.message.includes('Text'))")
+        page.evaluate("setCanvasSize(96,96)")
+        import struct
+        with page.expect_download() as exported:
+            page.evaluate("uiPubExport('tiff',96)")
+        data=Path(exported.value.path()).read_bytes()
+        assert data[:4] == b"II*\\x00"
+        ifd=struct.unpack_from("<I",data,4)[0]
+        tags={struct.unpack_from("<H",data,ifd+2+i*12)[0]:struct.unpack_from("<HHII",data,ifd+2+i*12)[1:] for i in range(struct.unpack_from("<H",data,ifd)[0])}
+        assert tags[256][2] == tags[257][2] == 96
+        assert struct.unpack_from("<II",data,tags[282][2]) == (96,1)
+        assert tags[279][2] == 96*96*3
+        with page.expect_download() as exported:
+            page.evaluate("uiPubExport('pdf',96)")
+        data=Path(exported.value.path()).read_bytes()
+        assert data.startswith(b"%PDF-1.4") and b"/MediaBox [0 0 72 72]" in data
+        start=int(data.split(b"startxref\\n")[-1].splitlines()[0])
+        assert data[start:start+4] == b"xref"
+        page.wait_for_function("() => uiRecoveryReady")
+        assert page.evaluate("uiRecoverySave(true)")
+        assert page.evaluate("async () => (await uiRecoveryStore('readonly',s=>s.get(uiRecoveryKey))).project.pages.length") == 1
         assert not errors, errors
         page.close()
     browser.close()
