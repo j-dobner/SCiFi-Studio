@@ -157,9 +157,12 @@ with sync_playwright() as p:
         page.locator("#uiColorHex").fill("#ABCDEF")
         page.locator("#uiColorHex").press("Escape")
         assert page.evaluate("selectedObj().color.toLowerCase()") == "#336699"
-        page.evaluate("window.EyeDropper=class { async open(){return {sRGBHex:'#6699cc'}} }")
+        # Use a function body: a bare assignment evaluates to the class itself,
+        # which Playwright may attempt to invoke as an evaluation callback.
+        page.evaluate("() => { window.EyeDropper = class { async open(){return {sRGBHex:'#6699cc'}} }; }")
         page.locator("#customColor + .ui-color-more").click()
         page.locator("#uiColorEye").click()
+        page.wait_for_function("() => selectedObj().color.toLowerCase() === '#6699cc'")
         assert page.evaluate("selectedObj().color.toLowerCase()") == "#6699cc"
         # UI review 2: sections open initially and keep their state across rendering.
         assert page.locator("#inspector .ui-props-toggle").count() >= 5
