@@ -542,6 +542,43 @@ with sync_playwright() as p:
         page.evaluate("activatePage(pages[0].id);undo()")
         assert page.evaluate("JSON.stringify(objects)===window.widthOriginal")
         page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
+        # v23.7: exact physical units, reference anchors, path controls and undo.
+        page.evaluate("""() => {
+            const a=rect(20,30,96,48,'#abcdef',4);a.strokeWidth=2;objects=[a];selectOnly(a.id);render();window.preciseOriginal=JSON.stringify(objects)
+        }""")
+        page.locator("#uiPreciseBtn").click()
+        page.locator("#uiPreciseUnit").select_option("in")
+        assert abs(float(page.locator("#uiPrecise-w").input_value())-1)<1e-8
+        page.locator("[data-precise-anchor=c]").click()
+        page.locator("#uiPrecise-w").fill("2")
+        assert abs(float(page.locator("#uiPrecise-h").input_value())-1)<1e-8
+        page.wait_for_function("() => !document.querySelector('#uiPreciseApply').disabled")
+        assert page.evaluate("JSON.stringify(objects)===window.preciseOriginal")
+        page.locator("#uiPreciseApply").click()
+        assert page.evaluate("[objects[0].x,objects[0].y,objects[0].w,objects[0].h,objects[0].strokeWidth]") == [-28,6,192,96,2]
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.preciseOriginal")
+        page.evaluate("""() => {
+            const p=pathElem([{x:0,y:0,outX:10,outY:0},{x:30,y:20,inX:20,inY:20},{x:0,y:40}],'#123456',2,'#abcdef',true);
+            p.otherContours=[[{x:5,y:5},{x:10,y:5},{x:5,y:10}]];
+            objects=[p];selectOnly(p.id);render();
+            const f=uiPreciseFrame(objects),n=uiPrecisePlan(objects,{x:10,y:15,w:f.w*2,h:f.h*3},'nw',true)[0];
+            if(Math.abs(n.nodes[0].outX-p.nodes[0].outX*2)>1e-8||n.otherContours[0][0].y!==15||n.strokeWidth!==4)throw Error('Path control scaling failed');
+        }""")
+        page.evaluate("""() => {
+            const a=rect(10,20,40,20),b=rect(80,40,40,20);b.rotation=30;
+            objects=[a,b];selection(objects.map(o=>o.id));render();
+            const f=uiPreciseFrame(objects),n=uiPrecisePlan(objects,{x:100,y:120,w:f.w*2,h:f.h*2},'nw');
+            const nf=uiPreciseFrame(n);
+            if(Math.abs(nf.x-100)>1e-7||Math.abs(nf.y-120)>1e-7||Math.abs(nf.w-f.w*2)>1e-7||Math.abs(nf.h-f.h*2)>1e-7)throw Error('Group transform failed');
+        }""")
+        page.evaluate("""() => {
+            const a=line(10,20,50,60);objects=[a];selectOnly(a.id);render();
+            const b=uiPrecisePlan(objects,{x:5,y:10,x2:100,y2:20})[0];
+            if(b.x2!==100||b.y!==10)throw Error('Endpoint transform failed');
+            const c=line(50,60,90,90);c.attachStart={id:a.id,t:1};objects.push(c);render();
+        }""")
+        assert page.locator("#uiPreciseBtn").is_disabled()
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {

@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.6 — Figure line widths review</title>
+<title>SCiFi Studio v23.7 — Precise transform review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.6 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.7 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -4398,6 +4398,149 @@ function uiWidthDialog(){
 uiReviewPaths.figureWidth='<path d="M4 5h16M4 12h16M4 19h16" stroke-linecap="round"/><path d="M4 12h16" stroke-width="2.8"/><path d="M4 19h16" stroke-width="4"/>';
 const uiWidthButton=nxButton('uiFigureWidthsBtn','Line widths',uiWidthDialog,$('#uiFigureTypographyBtn').parentElement);
 uiWidthButton.classList.add('ui-review-icon');uiReviewToolLabel(uiWidthButton,'figureWidth','Line widths');uiWidthButton.title='Inspect and selectively replace visible stroke widths in physical points';
+
+/* Incremental v23.7: physical-unit transforms with stable anchors and validated geometry. */
+const uiPreciseAnchors=[['nw','Top left',0,0],['n','Top center',.5,0],['ne','Top right',1,0],['w','Middle left',0,.5],['c','Center',.5,.5],['e','Middle right',1,.5],['sw','Bottom left',0,1],['s','Bottom center',.5,1],['se','Bottom right',1,1]];
+const uiPreciseNumber=(v,unit)=>String(Number((v/PAGE_FACTORS[unit]).toPrecision(12)));
+function uiPreciseValidate(items){
+ if(!items.length)throw Error('Select one or more objects.');
+ if(items.some(o=>o.hidden||o.locked||o.type==='reference'))throw Error('Unlock or show all selected objects before transforming.');
+ const ids=new Set(items.map(o=>o.id));
+ if(objects.some(o=>o.type==='arrow'&&[o.attachStart?.id,o.attachEnd?.id,o.branchTrunkId].some(id=>id&&(ids.has(id)||ids.has(o.id)))))throw Error('Attached connector networks are not supported by precise transforms yet. Use the existing connector editing tools.');
+ if(items.some(o=>o.type!=='arrow'&&(!Number.isFinite(o.w)||!Number.isFinite(o.h)||o.w<=0||o.h<=0)))throw Error('Selection contains an invalid frame.');
+}
+function uiPreciseFrame(items){
+ const line=items.length===1&&items[0].type==='arrow',single=items.length===1&&!line;
+ if(line){const o=items[0];return {x:o.x,y:o.y,x2:o.x2,y2:o.y2,line:true,single:false}}
+ if(single){const o=items[0];return {x:o.x,y:o.y,w:o.w,h:o.h,single:true,line:false,rotation:o.rotation||0}}
+ // Use the rotated object frames, but not the editor's extra arrow selection padding.
+ const bb=items.map(o=>o.type==='arrow'?{left:Math.min(o.x,o.x2),right:Math.max(o.x,o.x2),top:Math.min(o.y,o.y2),bottom:Math.max(o.y,o.y2)}:bounds(o));
+ const x=Math.min(...bb.map(b=>b.left)),y=Math.min(...bb.map(b=>b.top));
+ return {x,y,w:Math.max(...bb.map(b=>b.right))-x,h:Math.max(...bb.map(b=>b.bottom))-y,single:false,line:false,rotation:0}
+}
+function uiPreciseAnchor(frame,key){
+ const a=uiPreciseAnchors.find(v=>v[0]===key)||uiPreciseAnchors[0];
+ const dx=(a[2]-.5)*frame.w,dy=(a[3]-.5)*frame.h,rad=(frame.rotation||0)*Math.PI/180;
+ return {x:frame.x+frame.w/2+dx*Math.cos(rad)-dy*Math.sin(rad),y:frame.y+frame.h/2+dx*Math.sin(rad)+dy*Math.cos(rad)}
+}
+function uiPreciseScale(o,old,sx,sy,scaleStroke){
+ // Keep exact stored frame dimensions, including compound path contours.
+ o.w=old.w*sx;o.h=old.h*sy;
+ if(o.type==='path'){
+  const nodes=arr=>arr.map(n=>{const p={...n};for(const k of ['x','inX','outX'])if(Number.isFinite(n[k]))p[k]=n[k]*sx;for(const k of ['y','inY','outY'])if(Number.isFinite(n[k]))p[k]=n[k]*sy;return p});
+  o.nodes=nodes(old.nodes||[]);if(Array.isArray(old.otherContours))o.otherContours=old.otherContours.map(nodes)
+ }
+ if(o.type==='rect')o.radius=(old.radius||0)*Math.min(sx,sy);
+ if(o.type==='text'&&o.textBoxMode!=='fixed'){
+  const fs=(old.fontSize||20)*sy,tx=(old.textScaleX||1)*sx/sy;
+  if(fs<6||fs>160||tx<.01||tx>100)throw Error('Requested text scaling exceeds native font-size or horizontal-scale limits.');
+  o.fontSize=fs;o.textScaleX=tx;
+  if(Array.isArray(old.richRuns))o.richRuns=old.richRuns.map(r=>{
+   const style={...r.style};if(Number.isFinite(style.fontSize)){style.fontSize*=sy;if(style.fontSize<6||style.fontSize>160)throw Error('Requested scaling exceeds a rich-text font-size limit.')}
+   if(Number.isFinite(style.tracking)){style.tracking*=sy;if(style.tracking< -2||style.tracking>15)throw Error('Requested scaling exceeds the rich-text tracking limit.')}
+   return {...r,style}
+  })
+ }
+ if(scaleStroke&&['path','shape','rect'].includes(o.type)){
+  const sw=(old.strokeWidth??(o.type==='path'?3:2))*Math.min(sx,sy);if(sw>(o.type==='path'?80:35))throw Error('Requested stroke scaling exceeds the native width limit.');
+  o.strokeWidth=sw
+ }
+ // A symbol or plot has an internal SVG coordinate system; resizing its frame
+ // inherently scales internal artwork. Fixed text boxes instead keep font size.
+}
+function uiPrecisePlan(items,values,anchor='nw',scaleStroke=false){
+ uiPreciseValidate(items);
+ const old=uiPreciseFrame(items),next=items.map(o=>structuredClone(o));
+ const finite=v=>Number.isFinite(v)&&Math.abs(v)<=10000;
+ if(old.line){
+  if(!['x','y','x2','y2'].every(k=>finite(values[k]))||Math.hypot(values.x2-values.x,values.y2-values.y)<.1)throw Error('Enter valid endpoints at least 0.1 design pixels apart.');
+  const o=next[0];Object.assign(o,values,{w:Math.abs(values.x2-values.x),h:Math.abs(values.y2-values.y)});return next
+ }
+ const {x,y,w,h}=values;
+ if(![x,y,w,h].every(finite)||w<.1||h<.1)throw Error('Enter finite coordinates and positive frame dimensions (0.1–10000 design pixels).');
+ if(old.w<=0||old.h<=0)throw Error('Selection has a zero-width or zero-height frame.');
+ const sx=w/old.w,sy=h/old.h;
+ if(!old.single&&Math.abs(sx/sy-1)>1e-8)throw Error('Group transforms must preserve proportions to avoid skewing rotated members.');
+ const frame={...old,x:0,y:0,w,h},offset=uiPreciseAnchor(frame,anchor);frame.x=x-offset.x;frame.y=y-offset.y;
+ for(let i=0;i<items.length;i++){
+  const prev=items[i],o=next[i];
+  if(o.type==='arrow'){
+   o.x=frame.x+(prev.x-old.x)*sx;o.y=frame.y+(prev.y-old.y)*sy;o.x2=frame.x+(prev.x2-old.x)*sx;o.y2=frame.y+(prev.y2-old.y)*sy;
+   o.w=Math.abs(o.x2-o.x);o.h=Math.abs(o.y2-o.y);
+   if(scaleStroke){const sw=(prev.strokeWidth||3)*sx;if(sw>35)throw Error('Requested arrow width exceeds native limit.');o.strokeWidth=sw}
+  }else{
+   if(Math.abs(sx-1)>1e-10||Math.abs(sy-1)>1e-10)uiPreciseScale(o,prev,sx,sy,scaleStroke);
+   if(old.single){o.x=frame.x;o.y=frame.y}
+   else{o.x=frame.x+(prev.x+prev.w/2-old.x)*sx-o.w/2;o.y=frame.y+(prev.y+prev.h/2-old.y)*sy-o.h/2}
+  }
+  if(![o.x,o.y,o.w,o.h].every(finite)||(o.type==='arrow'&&![o.x2,o.y2].every(finite)))throw Error('A resulting object exceeds native coordinate or dimension limits.');
+ }
+ return next
+}
+function uiPreciseDialog(){
+ closeTextEditor(true);
+ const items=selectedObjs();try{uiPreciseValidate(items)}catch(e){showToast(e.message);return}
+ const original=uiPreciseFrame(items),line=original.line,group=!original.single&&!line;
+ let unit=PAGE_FACTORS[pageUnit]?pageUnit:'px',anchor='nw',ratio=true;
+ const anchorValue=line?null:uiPreciseAnchor(original,anchor);
+ let values=line?{x:original.x,y:original.y,x2:original.x2,y2:original.y2}:{x:anchorValue.x,y:anchorValue.y,w:original.w,h:original.h};
+ const fields=line?[['x','Start X'],['y','Start Y'],['x2','End X'],['y2','End Y']]:[['x','Anchor X'],['y','Anchor Y'],['w','Width'],['h','Height']];
+ modal('<h2>Precise transform</h2><p>'+(line?'Enter exact endpoints for the selected unattached line or arrow.':group?'Position and proportionally resize the selected group or objects using their combined page-aligned frames.':'Position and resize the selected object using its local, unrotated frame dimensions. The selected anchor is measured in page coordinates.')+'</p><label class="nx-field">Units<select id="uiPreciseUnit">'+[['px','Pixels'],['mm','Millimeters'],['cm','Centimeters'],['in','Inches']].map(([v,n])=>'<option value="'+v+'" '+(v===unit?'selected':'')+'>'+n+'</option>').join('')+'</select></label>'+(line?'':'<div class="ui-precise-anchor-row"><span>Reference anchor</span><div id="uiPreciseAnchors" class="ui-precise-anchors" role="group" aria-label="Reference anchor">'+uiPreciseAnchors.map(([v,n])=>'<button type="button" class="btn small" data-precise-anchor="'+v+'" title="'+n+'" aria-label="'+n+'"><span></span></button>').join('')+'</div></div>')+'<div class="fields2">'+fields.map(([id,label])=>'<div class="field"><label for="uiPrecise-'+id+'">'+label+' <span data-precise-unit></span></label><input id="uiPrecise-'+id+'" type="number" step="any"></div>').join('')+'</div>'+(line?'':'<label><input type="checkbox" id="uiPreciseRatio" checked '+(group?'disabled':'')+'> Maintain aspect ratio'+(group?' (required for groups)':'')+'</label><p><label><input type="checkbox" id="uiPreciseStroke"> Scale native outline and line widths</label></p>')+'<div class="ui-fig-color-preview"><svg id="uiPrecisePreview" xmlns="http://www.w3.org/2000/svg" aria-label="Transform preview"></svg></div><p id="uiPreciseStatus" role="status"></p><div class="actiongrid"><button class="btn primary" id="uiPreciseApply">Apply transform</button><button class="btn" id="uiPreciseReset">Reset</button><button class="btn" id="uiPreciseCancel">Cancel</button></div><p class="hint">96 design pixels = 1 inch. Dimensions are object frames, not visible ink bounds. Negative positions are allowed. Fixed text boxes keep their font size; auto-size text scales its font and glyph width. Native icon and plot interiors scale with their frame regardless of the outline checkbox. Attached connector networks require the existing editing tools. No document changes occur until Apply.</p>');
+ const root=$('#uiPrecisePreview');let frame=0,invalid=new Set();
+ const read=k=>$('#uiPrecise-'+k).valueAsNumber*PAGE_FACTORS[unit];
+ function showFields(){
+  for(const [k] of fields)$('#uiPrecise-'+k).value=Number.isFinite(values[k])?uiPreciseNumber(values[k],unit):'';
+  document.querySelectorAll('[data-precise-unit]').forEach(n=>n.textContent='('+unit+')');
+  document.querySelectorAll('[data-precise-anchor]').forEach(b=>{b.classList.toggle('active',b.dataset.preciseAnchor===anchor);b.setAttribute('aria-pressed',String(b.dataset.preciseAnchor===anchor))})
+ }
+ function plan(){if(invalid.size)throw Error('Enter valid numeric values.');return uiPrecisePlan(items,values,anchor,!!$('#uiPreciseStroke')?.checked)}
+ function preview(){
+  if(!root.isConnected||$('#modalOverlay').classList.contains('hidden'))return;
+  try{
+   const next=plan(),map=new Map(next.map(o=>[o.id,o])),page={items:objects.map(o=>map.get(o.id)||o),background:pageBackground};
+   uiFigureColorPreview(root,page,new Map(),new Set(),false);
+   const changed=next.some((v,i)=>JSON.stringify(v)!==JSON.stringify(items[i]));
+   $('#uiPreciseApply').disabled=!changed;$('#uiPreciseStatus').textContent=changed?'Ready to apply · '+items.length+' object(s)':'No changes';
+  }catch(e){$('#uiPreciseStatus').textContent=e.message;$('#uiPreciseApply').disabled=true}
+ }
+ function schedule(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;preview()})}
+ for(const [k] of fields)$('#uiPrecise-'+k).oninput=()=>{
+  const v=read(k);if(!Number.isFinite(v)){invalid.add(k);schedule();return}
+  invalid.delete(k);values[k]=v;
+  if(!line&&ratio&&(k==='w'||k==='h')){
+   const other=k==='w'?'h':'w';values[other]=v*original[other]/original[k];invalid.delete(other);$('#uiPrecise-'+other).value=uiPreciseNumber(values[other],unit)
+  }
+  schedule()
+ };
+ $('#uiPreciseUnit').onchange=e=>{unit=e.target.value;showFields();invalid.clear();schedule()};
+ for(const b of document.querySelectorAll('[data-precise-anchor]'))b.onclick=()=>{
+  // Changing anchor changes the coordinate reference, not the pending geometry.
+  const f={...original,x:0,y:0,w:values.w,h:values.h},old=uiPreciseAnchor(f,anchor),next=uiPreciseAnchor(f,b.dataset.preciseAnchor);
+  if([values.x,values.y,values.w,values.h].every(Number.isFinite)){values.x+=next.x-old.x;values.y+=next.y-old.y}
+  anchor=b.dataset.preciseAnchor;showFields();schedule()
+ };
+ if(!line){
+  $('#uiPreciseRatio').onchange=e=>{ratio=e.target.checked;if(ratio){values.h=values.w*original.h/original.w;invalid.delete('h');showFields()}schedule()};
+  $('#uiPreciseStroke').onchange=schedule
+ }
+ $('#uiPreciseReset').onclick=()=>{const p=line?null:uiPreciseAnchor(original,anchor);values=line?{x:original.x,y:original.y,x2:original.x2,y2:original.y2}:{x:p.x,y:p.y,w:original.w,h:original.h};invalid.clear();showFields();schedule()};
+ $('#uiPreciseCancel').onclick=closeModal;
+ $('#uiPreciseApply').onclick=()=>{try{const next=plan(),map=new Map(next.map(o=>[o.id,o]));closeModal();transact(()=>{objects=objects.map(o=>map.get(o.id)||o)});showToast('Precise transform applied')}catch(e){showToast(e.message)}};
+ showFields();preview()
+}
+const uiPreciseInspectorBase=renderInspector;
+renderInspector=function(){
+ uiPreciseInspectorBase();
+ const root=$('#inspector');if(!selectedObjs().length)return;
+ let section=[...root.querySelectorAll('.ui-props-section')].find(n=>/position|placement|transform/i.test(n.querySelector('.ui-props-name')?.textContent||''));
+ if(!section){section=document.createElement('div');section.className='section';uiPropsHeading(section,'Precise transform');const first=root.querySelector('.section');if(first)first.after(section);else root.prepend(section);uiPropsDecorate()}
+ const body=section.querySelector('.ui-props-body')||section;
+ const button=document.createElement('button');button.type='button';button.className='btn small';button.id='uiPreciseBtn';button.textContent='Precise transform…';button.style.width='100%';button.style.marginTop='7px';button.onclick=uiPreciseDialog;
+ try{uiPreciseValidate(selectedObjs())}catch(e){button.disabled=true;button.title=e.message}
+ body.append(button)
+};
+const uiPreciseCss=document.createElement('style');uiPreciseCss.textContent='.ui-precise-anchor-row{display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:12px}.ui-precise-anchors{display:grid;grid-template-columns:repeat(3,25px);gap:3px}.ui-precise-anchors button{padding:0!important;width:25px;height:25px;display:grid;place-items:center}.ui-precise-anchors button span{width:5px;height:5px;background:#819caf;border-radius:50%}.ui-precise-anchors button.active span{background:#365e7a;width:8px;height:8px}';document.head.append(uiPreciseCss);
+render();
 
 nxFitAvailable();
 </script>
