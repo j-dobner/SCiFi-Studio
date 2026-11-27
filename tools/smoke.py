@@ -89,6 +89,25 @@ with sync_playwright() as p:
         assert page.evaluate("selectedObj().color") == "#007700"
         assert page.evaluate("selectedObj().richRuns[0].style.italic")
         assert page.evaluate("!('color' in selectedObj().richRuns[0].style)")
+        # UI review 3: favorite, filter, exact-variant insertion, thumbnail sizes.
+        assert page.locator("#uiLibAll").get_attribute("aria-pressed") == "true"
+        page.locator("#assetSearch").fill("")
+        page.locator("#assets .ui-lib-star").first.click()
+        assert page.locator("#assets .ui-lib-star").first.get_attribute("aria-pressed") == "true"
+        page.locator("#uiLibFavorites").click()
+        assert page.locator("#assets [data-asset]").count() == 1
+        favorite_id=page.locator("#assets [data-asset]").first.get_attribute("data-asset")
+        page.locator("#assets [data-asset]").first.click()
+        page.locator("#uiLibRecent").click()
+        assert page.locator("#assets [data-asset]").first.get_attribute("data-asset") == favorite_id
+        page.locator("#uiLibSize").select_option("large")
+        assert page.locator("#assets").get_attribute("data-thumbnail-size") == "large"
+        page.locator("#uiLibSize").select_option("normal")
+        page.locator("#uiLibFavorites").click()
+        page.locator("#assets .ui-lib-star").first.click()
+        assert page.locator("#assets [data-asset]").count() == 0
+        page.locator("#uiLibAll").click()
+        page.evaluate("selectOnly(objects.find(o=>o.type==='text').id);render()")
         # UI review 2: sections open initially and keep their state across rendering.
         assert page.locator("#inspector .ui-props-toggle").count() >= 5
         assert page.locator("#inspector .ui-props-toggle[aria-expanded=false]").count() == 0

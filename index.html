@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 — Properties review 2</title>
+<title>SCiFi Studio v23 — Library review 3</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 2</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 3</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -1417,13 +1417,13 @@ document.getElementById('iconWorkspaceSave').addEventListener('click',()=>closeI
 document.getElementById('iconWorkspaceCancel').addEventListener('click',()=>closeIconWorkspace(false));
 
 function addAsset(id,x=440,y=250,withLabel=false){if(!byId[id])return;$('.left').classList.remove('mobile-open');const asset=byId[id];
- if(asset.kind==='group'){makeCompoundIcon(asset,x,y,withLabel);return}
+ if(asset.kind==='group'){makeCompoundIcon(asset,x,y,withLabel);window.scifiLibraryReviewRecord?.([id]);return}
  transact(()=>{let a=byId[id],aspect=a.uploaded?a.width/a.height:1;let w=a.uploaded?Math.min(165,Math.round(120*Math.max(1,aspect))):(id==='membrane'?155:118),h=a.uploaded?Math.max(26,Math.round(w/aspect)):(id==='membrane'?108:118);if(h>165){w=Math.max(26,Math.round(w*165/h));h=165}
  const initialY=withLabel?Math.max(0,Math.min(canvasHeight-h-35,y-h/2-14)):Math.max(0,Math.min(canvasHeight-h,y-h/2));
  const o=obj(id,Math.max(0,Math.min(canvasWidth-w,x-w/2)),initialY,w,h);o.sourceAssetId=a.id;o.familyId=a.familyId;o.variantMeta=structuredClone(a.variantMeta||{});const additions=[o];
  if(withLabel){const groupId='group-'+uid();o.groupId=groupId;appendAssetSubtitle(a,additions,o.x+o.w/2,o.y+o.h,groupId)}
  objects.push(...additions);selection(additions.map(v=>v.id))});
- showToast('Added '+asset.name+(withLabel?' with editable label':''))}
+ window.scifiLibraryReviewRecord?.([id]);showToast('Added '+asset.name+(withLabel?' with editable label':''))}
 function reusableGroupSvg(a){const w=Math.max(1,a.width),h=Math.max(1,a.height);return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="72" height="62">${a.elements.map(o=>renderObject(o,true)).join('')}</svg>`}
 function saveSelectionAsIcon(){const chosen=selectedObjs();if(chosen.length<2||!groupsInSelection().length){showToast('Group two or more objects first');return}
  if(customAssets.length>=MAX_CUSTOM_ICONS){showToast('Custom icon library is full');return}
@@ -1997,15 +1997,16 @@ function insertAssetBatch(ids,x,y,withLabel=false){
   }
   objects.push(...additions);selection(additions.map(o=>o.id));
  });
- setTool('select');selectedLibraryAssets.clear();renderAssets();
+ setTool('select');selectedLibraryAssets.clear();window.scifiLibraryReviewRecord?.(requested);renderAssets();
  showToast('Inserted '+requested.length+' icons'+(withLabel?' with labels':'')+' · one undo step');
 }
 function toggleLibraryAsset(id){if(selectedLibraryAssets.has(id))selectedLibraryAssets.delete(id);else selectedLibraryAssets.add(id);renderAssets()}
 function renderAssets(){
  const q=$('#assetSearch').value.trim().toLowerCase();
- const matchedAssets=assets.filter(a=>categoryMatch(a,category)&&(
-  a.name.toLowerCase().includes(q)||(a.category||'').toLowerCase().includes(q)||(a.originalCategory||'').toLowerCase().includes(q)||(packRecord(a.packId)?.name||'').toLowerCase().includes(q)||(a.variant||'').includes(q)||a.id.includes(q)||scifiFamilySearch(a,q)));
- const showEach=!!$('#scifiShowEach')?.checked;
+ const matchedAssets=assets.filter(a=>categoryMatch(a,category)&&(!window.scifiLibraryReviewFilter||window.scifiLibraryReviewFilter(a))&&(
+  a.name.toLowerCase().includes(q)||(a.category||'').toLowerCase().includes(q)||(a.originalCategory||'').toLowerCase().includes(q)||(packRecord(a.packId)?.name||'').toLowerCase().includes(q)||(a.variant||'').includes(q)||a.id.includes(q)||scifiFamilySearch(a,q)||!!window.scifiLibraryReviewSearch?.(a,q)));
+ const showEach=!!$('#scifiShowEach')?.checked||!!window.scifiLibraryReviewPersonal?.();
+ if(window.scifiLibraryReviewSort)window.scifiLibraryReviewSort(matchedAssets);
  const filtered=showEach?matchedAssets:scifiVisibleFamilyAssets(matchedAssets,q);
  const pagesCount=Math.max(1,Math.ceil(filtered.length/ASSETS_PER_PAGE));assetPage=Math.max(0,Math.min(assetPage,pagesCount-1));
  const visible=filtered.slice(assetPage*ASSETS_PER_PAGE,(assetPage+1)*ASSETS_PER_PAGE);
@@ -3241,6 +3242,67 @@ const uiPropsCss=document.createElement('style');uiPropsCss.id='uiReviewProperti
 '.app #inspector .ui-props-body .field{gap:4px;margin-bottom:9px}.app #inspector .ui-props-body .field label,.app #inspector .ui-props-body .fieldlabel{font-size:11px;color:#486779}.app #inspector .ui-props-body .fields2{gap:0 8px}.app #inspector .ui-props-body input:not([type=checkbox]):not([type=range]):not([type=color]),.app #inspector .ui-props-body select,.app #inspector .ui-props-body textarea{border:1px solid #cfdee7;border-radius:6px;background:#fff;color:#2c4b60;min-width:0;max-width:100%;font-variant-numeric:tabular-nums}.app #inspector .ui-props-body textarea{padding:7px;line-height:1.45}.app #inspector .ui-props-body .shared-note,.app #inspector .ui-props-body .ratio-note{line-height:1.45;color:#567282}.app #inspector .ui-props-body .actiongrid,.app #inspector .ui-props-body .align-grid{gap:5px}.app #inspector .ui-props-body .actiongrid .btn,.app #inspector .ui-props-body .align-grid .btn{min-width:0;white-space:normal;line-height:1.25;padding:6px;font-size:11px}.app #inspector .ui-props-body .swatches{gap:7px}',
 '.app .right>.nx-panel{flex:none}.app #nxLayerPanel{flex:1;min-height:0;overflow:auto}'
 ].join('\n');document.head.append(uiPropsCss);render();
+
+/* UI review 3: local library preferences, exact-variant favorites, recent insertions. */
+function uiLibRead(key,fallback){try{const raw=localStorage.getItem('scifi.ui.library.'+key);return raw===null?fallback:JSON.parse(raw)}catch{return fallback}}
+function uiLibWrite(key,value){try{localStorage.setItem('scifi.ui.library.'+key,JSON.stringify(value))}catch{}}
+function uiLibIds(key){const v=uiLibRead(key,[]);return Array.isArray(v)?[...new Set(v.filter(x=>typeof x==='string'))].slice(0,5000):[]}
+const uiLibFavorites=new Set(uiLibIds('favorites'));let uiLibRecent=uiLibIds('recent').slice(0,60),uiLibView='all',uiLibBrowseCategory=category;
+let uiLibSize=uiLibRead('size','normal');if(!['compact','normal','large'].includes(uiLibSize))uiLibSize='normal';
+const uiLibPane=$('#assetPane'),uiLibBar=document.createElement('div');uiLibBar.className='ui-lib-bar';
+uiLibBar.innerHTML='<div class="ui-lib-views" role="group" aria-label="Illustration library view"><button class="btn small" type="button" id="uiLibAll" data-lib-view="all">All icons</button><button class="btn small" type="button" id="uiLibFavorites" data-lib-view="favorites">☆ Favorites</button><button class="btn small" type="button" id="uiLibRecent" data-lib-view="recent">Recent</button></div><div class="ui-lib-options"><label for="uiLibSize">Thumbnail size</label><select id="uiLibSize"><option value="compact">Compact</option><option value="normal">Standard</option><option value="large">Large</option></select><button class="btn small" type="button" id="uiLibClearRecent" hidden title="Clear recently inserted illustrations">Clear</button></div>';
+uiLibPane.querySelector('.searchbar').after(uiLibBar);
+const uiLibNote=document.createElement('div');uiLibNote.className='ui-lib-note';uiLibBar.after(uiLibNote);
+function uiLibSetSize(v){uiLibSize=v;$('#assets').dataset.thumbnailSize=v;$('#uiLibSize').value=v;uiLibWrite('size',v)}
+$('#uiLibSize').onchange=e=>uiLibSetSize(e.target.value);uiLibSetSize(uiLibSize);
+window.scifiLibraryReviewPersonal=()=>uiLibView!=='all';
+window.scifiLibraryReviewFilter=a=>uiLibView==='all'||(uiLibView==='favorites'?uiLibFavorites.has(a.id):uiLibRecent.includes(a.id));
+window.scifiLibraryReviewSort=items=>{if(uiLibView==='recent')items.sort((a,b)=>uiLibRecent.indexOf(a.id)-uiLibRecent.indexOf(b.id))};
+window.scifiLibraryReviewRecord=ids=>{const added=[...new Set(ids)].filter(id=>byId[id]);if(!added.length)return;uiLibRecent=[...added,...uiLibRecent.filter(id=>!added.includes(id))].slice(0,60);uiLibWrite('recent',uiLibRecent);if(uiLibView==='recent'){assetPage=0;renderAssets()}else uiLibRefreshControls()};
+const uiLibSynonyms=[['ipsc','hipsc','induced pluripotent stem cell','induced pluripotent stem cells'],['esc','hesc','embryonic stem cell','embryonic stem cells'],['qpcr','qrt-pcr','real-time pcr','quantitative pcr'],['dna','deoxyribonucleic acid'],['rna','ribonucleic acid'],['mitochondrion','mitochondria'],['neuron','nerve cell'],['erythrocyte','red blood cell'],['leukocyte','white blood cell']];
+window.scifiLibraryReviewSearch=(a,q)=>{if(!q)return false;const tokens=uiLibSynonyms.find(group=>group.includes(q));if(!tokens)return false;const corpus=[a.name,a.category,a.originalCategory,...(a.searchKeywords||[]),a.description].filter(Boolean).join(' ').toLowerCase();return tokens.some(token=>{const escaped=token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return new RegExp('(^|[^a-z0-9])'+escaped+'([^a-z0-9]|$)','i').test(corpus)})};
+function uiLibRefreshControls(){
+ for(const b of uiLibBar.querySelectorAll('[data-lib-view]')){const on=b.dataset.libView===uiLibView;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))}
+ $('#uiLibFavorites').textContent='☆ Favorites ('+[...uiLibFavorites].filter(id=>byId[id]).length+')';
+ $('#uiLibRecent').textContent='Recent ('+uiLibRecent.filter(id=>byId[id]).length+')';
+ $('#uiLibClearRecent').hidden=uiLibView!=='recent'||!uiLibRecent.length;
+ uiLibNote.textContent=uiLibView==='favorites'?'Saved individual illustrations · click a star to remove.':uiLibView==='recent'?'Recently inserted variants · newest first.':'Star an illustration to find it again quickly.';
+ $('#scifiShowEach').disabled=uiLibView!=='all';
+}
+function uiLibSetView(view){
+ if(view===uiLibView)return;
+ if(uiLibView==='all')uiLibBrowseCategory=category;
+ uiLibView=view;category=view==='all'?uiLibBrowseCategory:'All';assetPage=0;selectedLibraryAssets.clear();renderCategories();renderAssets();
+}
+for(const b of uiLibBar.querySelectorAll('[data-lib-view]'))b.onclick=()=>uiLibSetView(b.dataset.libView);
+$('#uiLibClearRecent').onclick=()=>{uiLibRecent=[];uiLibWrite('recent',uiLibRecent);assetPage=0;renderAssets()};
+function uiLibFavoriteButton(id,cls){
+ const b=document.createElement('button');b.type='button';b.className=cls;
+ const refresh=()=>{const on=uiLibFavorites.has(id);b.textContent=on?'★':'☆';b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-label',(on?'Remove from favorites: ':'Add to favorites: ')+(byId[id]?.name||'Illustration'));b.title=b.getAttribute('aria-label')};
+ b.onclick=()=>{if(uiLibFavorites.has(id))uiLibFavorites.delete(id);else uiLibFavorites.add(id);uiLibWrite('favorites',[...uiLibFavorites]);if(uiLibView==='favorites')renderAssets();else{refresh();uiLibRefreshControls()}};
+ refresh();return b;
+}
+const uiLibOriginalRender=renderAssets;
+renderAssets=function(){uiLibOriginalRender();uiLibRefreshControls();
+ const assetsGrid=$('#assets');
+ for(const tile of [...assetsGrid.querySelectorAll(':scope > [data-asset]')]){
+  const id=tile.dataset.asset,a=byId[id],wrapper=document.createElement('div');wrapper.className='ui-lib-tile';tile.before(wrapper);wrapper.append(tile,uiLibFavoriteButton(id,'ui-lib-star'));
+  tile.title=[a?.name,scifiFamilyCount(a)>1?scifiFamilyCount(a)+' variants':null,...Object.values(a?.variantMeta||{}),'Click to insert · Shift-click to multi-select'].filter(Boolean).join(' · ');
+ }
+ if(uiLibView!=='all'&&!assetsGrid.querySelector('[data-asset]')){const empty=assetsGrid.querySelector('.asset-empty');if(empty)empty.textContent=uiLibView==='favorites'?'No matching favorites. Star illustrations in All icons to save them here.':'No matching recent illustrations. Insert an illustration to start this list.'}
+};
+/* Favorite the exact variant in the family chooser without inserting it. */
+const uiLibFamilyOriginal=scifiOpenFamilyPicker;scifiOpenFamilyPicker=function(asset,where={}){uiLibFamilyOriginal(asset,where);
+ const rows=$('#scifiVariantList');if(!rows)return;
+ for(const row of [...rows.querySelectorAll('[data-variant-id]')]){const wrap=document.createElement('div');wrap.className='ui-lib-variant-wrap';row.before(wrap);wrap.append(row,uiLibFavoriteButton(row.dataset.variantId,'ui-lib-variant-star'))}
+};
+const uiLibCss=document.createElement('style');uiLibCss.id='uiReviewLibrary';uiLibCss.textContent=[
+'.ui-lib-bar{margin:0 10px 6px;display:flex;flex-direction:column;gap:6px}.ui-lib-views{display:flex;gap:4px;flex-wrap:wrap}.app .ui-lib-views .btn{flex:1 1 auto;padding:5px 6px;font-size:10.5px;white-space:nowrap;min-height:28px}.app .ui-lib-views .btn.active{background:#e8f1f8;color:#24566b;border-color:#90b3ca}.ui-lib-options{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#526b80}.ui-lib-options select{flex:1;min-width:0;background:#fff;border:1px solid #d6e1ea;border-radius:5px;padding:4px;color:#36566b;font-size:11px}.ui-lib-options button[hidden]{display:none!important}.ui-lib-note{font-size:10.5px;color:#5a7281;margin:0 10px 7px;line-height:1.35}',
+'.ui-lib-tile{position:relative;min-width:0}.ui-lib-tile>.asset{width:100%;height:100%}.ui-lib-star,.ui-lib-variant-star{display:grid;place-items:center;cursor:pointer;background:#fff;color:#55718a;border:1px solid #d6e1ea;border-radius:5px;width:24px;height:24px;font-size:17px;line-height:1;padding:0;flex:none}.ui-lib-star{position:absolute;top:3px;right:3px;z-index:1}.ui-lib-star:hover,.ui-lib-variant-star:hover{background:#e8f1f8}.ui-lib-star[aria-pressed=true],.ui-lib-variant-star[aria-pressed=true]{color:#a46b18;border-color:#e4c78c;background:#fff8e9}.ui-lib-star:focus-visible,.ui-lib-variant-star:focus-visible{outline:2px solid #527a94;outline-offset:1px}',
+'.app #assets[data-thumbnail-size=compact]{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.app #assets[data-thumbnail-size=compact] .asset{min-height:90px;padding:12px 3px 4px}.app #assets[data-thumbnail-size=compact] .asset svg,.app #assets[data-thumbnail-size=compact] .asset img{width:min(54px,100%);height:44px}.app #assets[data-thumbnail-size=compact] .asset .nm{font-size:9.5px}.app #assets[data-thumbnail-size=compact] .ui-lib-star{width:20px;height:20px;font-size:14px;top:2px;right:2px}',
+'.app #assets[data-thumbnail-size=large]{grid-template-columns:minmax(0,1fr)}.app #assets[data-thumbnail-size=large] .asset{min-height:170px}.app #assets[data-thumbnail-size=large] .asset svg,.app #assets[data-thumbnail-size=large] .asset img{width:min(155px,100%);height:125px}.app #assets[data-thumbnail-size=large] .asset .nm{font-size:12px}',
+'.ui-lib-variant-wrap{display:flex;align-items:center;gap:5px}.ui-lib-variant-wrap .scifi-variant-row{flex:1;min-width:0}.ui-lib-variant-wrap .ui-lib-variant-star{margin-right:3px}'
+].join('\n');document.head.append(uiLibCss);renderAssets();
 
 nxFitAvailable();
 </script>
