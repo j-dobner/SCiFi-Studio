@@ -1222,11 +1222,13 @@ function svgDocument(exporting=false,sourceObjects=objects,background=pageBackgr
  return `${validPageColor(background)==='transparent'?'':`<rect width="${canvasWidth}" height="${canvasHeight}" fill="${svgEsc(validPageColor(background))}"/>`}${defs}${grid&&!exporting?`<defs><pattern id="canvasGrid" width="${scifiNext.grid}" height="${scifiNext.grid}" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="#e8edf6"/></pattern></defs><rect width="${canvasWidth}" height="${canvasHeight}" fill="url(#canvasGrid)" pointer-events="none"/>`:''}${exporting?content:'<g id="nxArtwork">'+content+'</g><g id="nxSelection">'+selectionMarkup()+'</g>'}${!exporting&&penPoints.length?`<path d="${pathD({nodes:penPoints,closed:false})}" fill="none" stroke="#3688AB" stroke-width="3" stroke-dasharray="6 3" pointer-events="none"/>${penPoints.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="${i===0?7:5}" fill="${i===0&&penPoints.length>=3?'#bbefcc':'white'}" stroke="#3688AB" stroke-width="2" pointer-events="none"/>`).join('')}`:''}${!exporting&&marquee?`<rect x="${marquee.left}" y="${marquee.top}" width="${marquee.right-marquee.left}" height="${marquee.bottom-marquee.top}" class="marquee-box"/>`:''}${!exporting&&arrowDraft?`<line x1="${arrowDraft.x}" y1="${arrowDraft.y}" x2="${arrowDraft.x2}" y2="${arrowDraft.y2}" stroke="#4267e8" stroke-width="2.6" stroke-dasharray="7 4" pointer-events="none"/>`:''}`}
 function render(){stage.innerHTML=svgDocument();updatePageBackgroundControls();$('#objectCount').textContent=objects.length+' elements';renderInspector();renderLayers();renderPages()}
 function redraw(){stage.innerHTML=svgDocument()}
+const MIN_CANVAS_ZOOM=.01, MAX_CANVAS_ZOOM=3;
 function setZoom(v){
- zoom=Math.min(3,Math.max(.25,Math.round(v*100)/100));
+ zoom=Math.min(MAX_CANVAS_ZOOM,Math.max(MIN_CANVAS_ZOOM,Math.round(v*1000)/1000));
  wrap.style.width=(canvasWidth*zoom)+'px';wrap.style.height=(canvasHeight*zoom)+'px';
  stage.style.width=(canvasWidth*zoom)+'px';stage.style.height=(canvasHeight*zoom)+'px';
- $('#zoomLevel').textContent=Math.round(zoom*100)+'%';
+ $('#zoomLevel').textContent=Number((zoom*100).toFixed(1))+'%';
+ $('#zoomOut').disabled=zoom<=MIN_CANVAS_ZOOM;$('#zoomIn').disabled=zoom>=MAX_CANVAS_ZOOM;
 }
 // Ctrl/Cmd + wheel over the actual SVG page, not elsewhere in the editor:
 // zoom toward the pointer, preserving its diagram-space position wherever scrolling permits.
@@ -1239,7 +1241,7 @@ canvasShell.addEventListener('wheel',e=>{
  const cursor=point(e),before=zoom;
  const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?canvasShell.clientHeight:1);
  const factor=Math.exp(-Math.max(-240,Math.min(240,delta))*.0012);
- setZoom(before*factor);
+ setZoom(before+(factor>1?1:-1)*Math.max(.001,Math.abs(before*factor-before)));
  if(zoom===before)return;
  const after=new DOMPoint(cursor.x,cursor.y).matrixTransform(stage.getScreenCTM());
  canvasShell.scrollLeft+=after.x-e.clientX;
@@ -2356,7 +2358,7 @@ $('#allTextBtn').onclick=selectAllText;
 $('#alignPicker').onchange=e=>{if(e.target.value)alignSelection(e.target.value);e.target.value=''};
 $('#pageColor').onchange=e=>setPageColor(e.target.value);$('#transparentBgBtn').onclick=()=>setPageColor(pageBackground==='transparent'?$('#pageColor').value:'transparent');
 $('#mobileAssets').onclick=()=>$('.left').classList.toggle('mobile-open');$('#selectTool').onclick=()=>setTool('select');$('#textTool').onclick=()=>setTool('text');$('#shapePaletteBtn').onclick=()=>toggleShapePalette('geometry');scifiLinePaletteButton.onclick=()=>toggleShapePalette('lines');$('#plotBtn').onclick=()=>plotBuilder();
-$('#zoomOut').onclick=()=>setZoom(zoom-.1);$('#zoomIn').onclick=()=>setZoom(zoom+.1);$('#gridBtn').onclick=()=>{grid=!grid;$('#gridBtn').classList.toggle('active',grid);render()};
+$('#zoomOut').onclick=()=>setZoom(zoom-(zoom<=.25?.01:.1));$('#zoomIn').onclick=()=>setZoom(zoom+(zoom<.25?.01:.1));$('#gridBtn').onclick=()=>{grid=!grid;$('#gridBtn').classList.toggle('active',grid);render()};
 $('#licenseLink').onclick=e=>{e.preventDefault();showLicense()};$('#modalOverlay').addEventListener('click',e=>{if(e.target===$('#modalOverlay')&&!$('#plotConfig'))closeModal()});$('#closeModal').onclick=closeModal;
 document.addEventListener('keydown',e=>{if(['pen','polyPen'].includes(activeTool)&&!e.target.closest('input,textarea,[contenteditable]')){
    if(e.key==='Enter'){e.preventDefault();finishPenPath(e.shiftKey);return}
@@ -3054,7 +3056,7 @@ const nxPanelCss=document.createElement('style');nxPanelCss.textContent=`
 @media(max-width:850px){.app .body{--nx-left:min(205px,27vw);--nx-right:min(225px,27vw)}.app .toolbar{padding:6px;gap:5px}.app .canvas-shell{padding:16px}}
 @media(max-width:600px){.app .body{--nx-left:min(180px,30vw);--nx-right:min(180px,30vw)}.app .toolbar{max-height:30vh}.app .canvas-shell{padding:8px}.app .page-dock{min-height:85px;height:85px}.app .page-dock-heading{gap:3px}.app .footerbar{padding:0 6px;overflow:hidden}.app .footerbar .footright{gap:4px}}
 `;document.head.append(nxPanelCss);
-function nxFitAvailable(maxZoom=3){const el=$('#canvasShell'),st=getComputedStyle(el),w=el.clientWidth-parseFloat(st.paddingLeft)-parseFloat(st.paddingRight)-8,h=el.clientHeight-parseFloat(st.paddingTop)-parseFloat(st.paddingBottom)-8;if(w<=0||h<=0)return;setZoom(Math.min(maxZoom,Math.max(.25,Math.floor(Math.min(w/canvasWidth,h/canvasHeight)*100)/100)));el.scrollLeft=Math.max(0,(el.scrollWidth-el.clientWidth)/2);el.scrollTop=Math.max(0,(el.scrollHeight-el.clientHeight)/2)}
+function nxFitAvailable(maxZoom=3){const el=$('#canvasShell'),st=getComputedStyle(el),w=el.clientWidth-parseFloat(st.paddingLeft)-parseFloat(st.paddingRight)-8,h=el.clientHeight-parseFloat(st.paddingTop)-parseFloat(st.paddingBottom)-8;if(w<=0||h<=0)return;setZoom(Math.min(maxZoom,Math.max(MIN_CANVAS_ZOOM,Math.floor(Math.min(w/canvasWidth,h/canvasHeight)*1000)/1000)));el.scrollLeft=Math.max(0,(el.scrollWidth-el.clientWidth)/2);el.scrollTop=Math.max(0,(el.scrollHeight-el.clientHeight)/2)}
 function nxUpdatePanels(){for(const [id,label] of nxPanels){const collapsed=!!nxPanelState[id];nxApp.classList.toggle('nx-hide-'+id,collapsed);const b=nxPanelButtons[id],action=collapsed?'Expand':'Collapse';b.setAttribute('aria-expanded',String(!collapsed));b.setAttribute('aria-label',action+' '+label);b.innerHTML='<span aria-hidden="true" class="nx-toggle-icon">'+(collapsed?'+':'−')+'</span><span class="nx-toggle-text">'+action+'</span>';b.title=action+' '+label;}const focus=$('#nxFocusCanvas');if(focus)focus.textContent=nxPanels.every(([id])=>nxPanelState[id])?'Restore panels':'Focus canvas'}
 function nxTogglePanel(id){nxPanelState[id]=!nxPanelState[id];nxUpdatePanels()}
 for(const [id,label] of nxPanels){if(id==='pages'){const heading=$('.page-dock-heading');nxPanelButtons[id]=nxButton('nxToggle-'+id,label,()=>nxTogglePanel(id),heading);nxPanelButtons[id].classList.add('nx-page-toggle');heading.append(nxPanelButtons[id]);continue}const panel=$('.'+id),rail=document.createElement('div'),lab=document.createElement('span');rail.className='nx-panel-rail';lab.className='nx-rail-label';lab.textContent=label;rail.append(lab);nxPanelButtons[id]=nxButton('nxToggle-'+id,label,()=>nxTogglePanel(id),rail);if(id==='right')rail.prepend(nxPanelButtons[id]);panel.prepend(rail)}

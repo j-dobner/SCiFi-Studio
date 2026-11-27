@@ -76,6 +76,24 @@ with sync_playwright() as p:
         page.locator("#applyCanvasSize").click()
         assert page.evaluate("canvasSize()") == {"width":794,"height":1123,"unit":"cm"}
         assert page.evaluate("pngExportSize(300)") == {"width":2481,"height":3509,"dpi":300}
+        # Large-format pages must fit below the old 25% zoom minimum.
+        page.evaluate("setCanvasSize(3179,4494); nxFitAvailable()")
+        assert page.evaluate("zoom") < .25
+        assert page.evaluate("""() => {
+            const shell=$('#canvasShell'),m=stage.getScreenCTM();
+            return canvasWidth*m.a <= shell.clientWidth && canvasHeight*m.d <= shell.clientHeight;
+        }""")
+        page.evaluate("setZoom(.05)")
+        page.locator("#zoomOut").click()
+        assert page.evaluate("zoom") == .04
+        page.locator("#zoomIn").click()
+        assert page.evaluate("zoom") == .05
+        page.evaluate("setZoom(0)")
+        assert page.evaluate("zoom") == .01
+        assert page.locator("#zoomOut").is_disabled()
+        page.evaluate("setZoom(4)")
+        assert page.evaluate("zoom") == 3
+        assert page.locator("#zoomIn").is_disabled()
         # Test real PNG metadata and dimensions with a smaller image.
         page.evaluate("setCanvasSize(96,96)")
         with page.expect_download() as exported:
