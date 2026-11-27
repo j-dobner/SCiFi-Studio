@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23.2 — Format painter review</title>
+<title>SCiFi Studio v23.3 — Figure color review</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.2 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.3 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -3812,6 +3812,172 @@ stage.addEventListener('pointerdown',e=>{
 document.addEventListener('keydown',e=>{if(uiPainterMode&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();uiPainterStop()}},true);
 const uiPainterToolBase=setTool;setTool=function(name){if(uiPainterMode)uiPainterStop();return uiPainterToolBase(name)};
 const uiPainterLoadBase=loadProjectData;loadProjectData=async function(data){uiPainterStop();uiPainterSource=null;uiPainterFlags=null;uiPainterSourceLabel='';return uiPainterLoadBase(data)};
+
+/* Incremental v23.3: inspect and replace actual editable color slots, not generic object tints. */
+const uiFigureColorRoles=[['fill','Fills'],['stroke','Outlines & lines'],['gradient','Gradient stops'],['text','Text'],['highlight','Text highlights'],['box','Text-box background & border'],['page','Page background']];
+const uiFigureColorHex=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)?v.toUpperCase():null;
+function uiFigureColorVisit(items,visit,allowed=null,depth=0){
+ if(!Array.isArray(items)||depth>8)return;
+ for(const o of items.slice(0,depth?2000:5000)){
+  if(!o||o.hidden||o.locked||o.opacity===0||o.type==='reference')continue;
+  if(depth===0&&allowed&&!allowed.has(o.id))continue;
+  if(o.type==='symbol'){uiFigureColorVisit(o.children,visit,null,depth+1);continue}
+  // Report only editable native slots, not placeholder colors on imported artwork or symbols.
+  const slot=(role,value,set)=>{const color=uiFigureColorHex(value);if(color)visit({role,color,set,object:o})};
+  const shape=o.type==='shape'||o.type==='rect',path=o.type==='path';
+  if(shape||path){
+   const paint=nxPaint(o.fillGradient);
+   if(paint){
+    // Use the original stop index so replacements are simultaneous and do not reorder the gradient.
+    for(const s of o.fillGradient.stops)if((s.opacity??1)>0)slot('gradient',uiFigureColorHex(s.color)||'#888888',v=>{s.color=v})
+   }else{
+    if(path)slot('fill',o.fillColor||'none',v=>{o.fillColor=v});
+    else if(o.type==='rect')slot('fill',o.fill||o.color,v=>{o.fill=o.color=v});
+    else slot('fill',o.color,v=>{o.color=v});
+   }
+   if((o.strokeWidth??(path?3:2))>0){
+    if(path)slot('stroke',o.color||'#4E9DAB',v=>{o.color=o.strokeColor=v});
+    else slot('stroke',o.strokeColor||'#4a8593',v=>{o.strokeColor=v})
+   }
+   if(shape&&o.shapeLabel)slot('text',o.labelColor||'#26384a',v=>{o.labelColor=v});
+  }else if(o.type==='arrow'){slot('stroke',o.color,v=>{o.color=v})}
+  else if(o.type==='text'){
+   const rich=richActive(o),chars=rich?richChars(o):null;
+   if(String(o.text||'').trim()){
+    if(!rich||chars.some((s,i)=>!s.color&&!/\s/.test(o.text[i]||'')))slot('text',rich?richStyle(o).color:o.color,v=>{o.color=v});
+    if(rich){
+     // Resolve overlapping character runs first. Report one slot for each contiguous effective style.
+     const runs=richCompress(chars);let updated=false;
+     for(const run of runs){
+      for(const [key,role] of [['color','text'],['highlight','highlight']]){
+       if(!Object.hasOwn(run.style,key))continue;
+       slot(role,run.style[key],v=>{run.style[key]=v;updated=true})
+      }
+     }
+     if(updated)o.richRuns=runs;
+    }
+   }
+   if(o.textBoxMode==='fixed'){
+    if(o.textBoxBgEnabled)slot('box',o.textBoxBgColor,v=>{o.textBoxBgColor=v});
+    if(o.textBoxBorderEnabled)slot('box',o.textBoxBorderColor,v=>{o.textBoxBorderColor=v})
+   }
+  }
+ }
+}
+function uiFigureColorPages(scope){
+ const selected=new Set(selectedIds);
+ return pages.filter(p=>scope==='all'||p.id===activePageId).map(p=>({id:p.id,name:p.name,items:p.id===activePageId?objects:p.elements,background:p.id===activePageId?pageBackground:p.background,allowed:scope==='selection'?selected:null}));
+}
+function uiFigureColorSlots(page,roles,visit){
+ uiFigureColorVisit(page.items,s=>{if(roles.has(s.role))visit(s)},page.allowed);
+ if(!page.allowed&&roles.has('page')){
+  const color=uiFigureColorHex(page.background);if(color)visit({role:'page',color,set:v=>{page.background=v},object:null})
+ }
+}
+function uiFigureColorInventory(scope,roles){
+ const rows=new Map();
+ for(const p of uiFigureColorPages(scope))uiFigureColorSlots(p,roles,s=>{
+  let row=rows.get(s.color);if(!row){row={color:s.color,count:0,roles:new Set(),pages:new Set()};rows.set(s.color,row)}
+  row.count++;row.roles.add(s.role);row.pages.add(p.id)
+ });
+ return [...rows.values()].sort((a,b)=>b.count-a.count||a.color.localeCompare(b.color));
+}
+function uiFigureColorReplace(page,roles,mapping){
+ let count=0;const changed=new Set();
+ // Collect immutable original colors before applying any replacement. Rich-run setters
+ // must execute during the visit so canonicalized runs are written only on an actual change.
+ uiFigureColorSlots(page,roles,s=>{const to=uiFigureColorHex(mapping.get(s.color));if(!to||to===s.color)return;s.set(to);count++;changed.add(s.object||page)});
+ return {slots:count,objects:changed.size}
+}
+function uiFigureColorApply(scope,roles,mapping){
+ if(!['selection','page','all'].includes(scope))throw Error('Choose a valid scope');
+ if(scope==='selection'&&!selectedIds.size)throw Error('Select objects first');
+ if(iconWorkspace&&scope==='all')throw Error('Finish icon editing before editing all pages');
+ const sources=uiFigureColorPages(scope),plans=[];
+ // Work on clones first. Never modify shared library assets or partially apply a failing plan.
+ for(const p of sources){const next={...p,items:structuredClone(p.items)};const result=uiFigureColorReplace(next,roles,mapping);if(result.slots)plans.push({p,next,result})}
+ if(!plans.length)return {slots:0,pages:0};
+ for(const {p,next} of plans){
+  if(p.id===activePageId){transact(()=>{objects=next.items;pageBackground=next.background;activePage().background=pageBackground})}
+  else{
+   const dest=pages.find(v=>v.id===p.id);if(!dest)continue;
+   const before=JSON.stringify({elements:dest.elements,background:dest.background,selection:[]});dest.elements=next.items;dest.background=next.background;
+   dest.undos=[...(dest.undos||[]),before].slice(-70);let size=dest.undos.reduce((sum,v)=>sum+v.length,0);while(dest.undos.length>1&&size>24*1024*1024)size-=dest.undos.shift().length;dest.redos=[];
+  }
+ }
+ storeCurrentPage();render();
+ return {slots:plans.reduce((sum,v)=>sum+v.result.slots,0),pages:plans.length}
+}
+function uiFigureColorPreview(svg,page,mapping,roles,after){
+ const clone={...page,items:structuredClone(page.items)};
+ if(after)uiFigureColorReplace(clone,roles,mapping);
+ svg.setAttribute('viewBox','0 0 '+canvasWidth+' '+canvasHeight);
+ svg.innerHTML=svgDocument(true,clone.items,clone.background);
+ // Isolate preview clip paths/gradients from the live canvas and page thumbnails.
+ const prefix='uiFigurePreview-'+uid()+'-',ids=new Map();
+ svg.querySelectorAll('[id]').forEach(n=>{const id=n.id;ids.set(id,prefix+id);n.id=prefix+id});
+ svg.querySelectorAll('*').forEach(el=>{for(const a of [...el.attributes]){
+  let value=a.value;if((a.localName==='href')&&value[0]==='#'&&ids.has(value.slice(1)))value='#'+ids.get(value.slice(1));
+  value=value.replace(/url\(\s*(['"]?)#([A-Za-z_][\w.:-]*)\1\s*\)/g,(m,q,id)=>ids.has(id)?'url(#'+ids.get(id)+')':m);
+  if(value!==a.value)el.setAttribute(a.name,value)
+ }});
+}
+function uiFigureColorDialog(){
+ if(uiPainterMode)uiPainterStop();closeTextEditor(true);
+ modal('<h2>Figure colors</h2><p>Inspect actual editable colors and replace only those you choose. Preview changes without modifying the figure. Counts are editable paint slots, not pixels or whole illustrations.</p><div class="nx-grid"><label class="nx-field">Scope<select id="uiFigColorScope"><option value="selection">Selected objects</option><option value="page">Current page</option><option value="all">All pages</option></select></label><label class="nx-field">Preview page<select id="uiFigColorPage"></select></label></div><div class="nx-checks" id="uiFigColorRoles"></div><div class="ui-fig-color-preview"><svg id="uiFigColorPreview" xmlns="http://www.w3.org/2000/svg" aria-label="Figure color preview"></svg></div><div class="actiongrid"><button type="button" class="btn small" id="uiFigColorBefore">Before</button><button type="button" class="btn small active" id="uiFigColorAfter">After</button><button type="button" class="btn small" id="uiFigColorReset">Reset replacements</button></div><div class="field"><label for="uiFigColorSearch">Find source color (HEX)</label><input id="uiFigColorSearch" placeholder="#AABBCC" autocomplete="off"></div><p id="uiFigColorSummary" role="status"></p><div id="uiFigColorRows" class="ui-fig-color-rows"></div><div class="actiongrid"><button class="btn primary" id="uiFigColorApply">Apply replacements</button><button class="btn" id="uiFigColorCancel">Cancel</button></div><p class="hint">Nested native icon parts are included; hidden/locked parts, reference images, imported SVG/raster artwork, and plot/QC-card palettes are not modified. Page background is opt-in. The library originals are not changed. All-page edits are undoable separately on each affected page.</p>');
+ const scope=$('#uiFigColorScope'),pageSelect=$('#uiFigColorPage'),roles=new Set(uiFigureColorRoles.map(v=>v[0]).filter(v=>v!=='page')),mapping=new Map(),enabled=new Set();let rows=[],after=true,frame=0;
+ scope.value=selectedIds.size?'selection':'page';scope.querySelector('[value=selection]').disabled=!selectedIds.size;scope.querySelector('[value=all]').disabled=!!iconWorkspace;
+ const activeMapping=()=>new Map([...mapping].filter(([key])=>enabled.has(key)));
+ function summary(){
+  const m=activeMapping(),changed=rows.filter(row=>m.has(row.color)&&uiFigureColorHex(m.get(row.color))!==row.color);
+  $('#uiFigColorSummary').textContent=rows.length+' editable colors · '+changed.length+' replacements · '+changed.reduce((sum,row)=>sum+row.count,0)+' paint slots affected';
+  $('#uiFigColorApply').disabled=!changed.length;
+ }
+ function preview(){
+  const svg=$('#uiFigColorPreview');if(!svg)return;
+  const p=uiFigureColorPages(scope.value).find(v=>v.id===pageSelect.value);if(!p)return;
+  uiFigureColorPreview(svg,p,activeMapping(),roles,after)
+ }
+ function schedule(){summary();if(!frame)frame=requestAnimationFrame(()=>{frame=0;preview()})}
+ function renderRows(){
+  const root=$('#uiFigColorRows');root.replaceChildren();const q=$('#uiFigColorSearch').value.trim().toUpperCase().replace(/^#/,'');
+  const matches=rows.filter(row=>row.color.slice(1).includes(q));if(!matches.length){root.textContent='No matching editable colors in this scope.';return}
+  // Keep the dialog responsive with very colorful figures; HEX search can locate any source.
+  for(const row of matches.slice(0,250)){
+   const wrap=document.createElement('div');wrap.className='ui-fig-color-row';wrap.dataset.sourceColor=row.color;
+   const check=document.createElement('input');check.type='checkbox';check.checked=enabled.has(row.color);check.setAttribute('aria-label','Enable replacement for '+row.color);
+   const from=document.createElement('span');from.className='ui-fig-color-original';from.style.backgroundColor=row.color;from.title=row.color;
+   const info=document.createElement('div');const hex=document.createElement('strong');hex.textContent=row.color;const meta=document.createElement('small');meta.textContent=row.count+' · '+[...row.roles].map(k=>uiFigureColorRoles.find(v=>v[0]===k)[1]).join(', ');info.append(hex,meta);
+   const arrow=document.createElement('span');arrow.textContent='→';arrow.setAttribute('aria-hidden','true');
+   const to=document.createElement('input');to.type='color';to.value=mapping.get(row.color)||row.color;to.id='uiFigColor-'+row.color.slice(1);to.setAttribute('aria-label','Replacement for '+row.color);
+   const code=document.createElement('span');code.className='ui-fig-color-code';code.textContent=to.value.toUpperCase();
+   check.onchange=()=>{if(check.checked)enabled.add(row.color);else enabled.delete(row.color);schedule()};
+   to.oninput=to.onchange=()=>{const v=uiFigureColorHex(to.value);if(!v)return;mapping.set(row.color,v);enabled.add(row.color);check.checked=true;code.textContent=v;schedule()};
+   const dest=document.createElement('div');dest.className='ui-fig-color-dest';dest.append(to,code);
+   wrap.append(check,from,info,arrow,dest);root.append(wrap)
+  }
+  if(matches.length>250){const note=document.createElement('p');note.textContent='Showing 250 of '+matches.length+' matches. Use HEX search to find other colors.';root.append(note)}
+ }
+ function refresh(){
+  rows=uiFigureColorInventory(scope.value,roles);const previous=pageSelect.value;pageSelect.replaceChildren();
+  const candidates=uiFigureColorPages(scope.value);for(const p of candidates){const option=document.createElement('option');option.value=p.id;option.textContent=p.name;pageSelect.append(option)}
+  pageSelect.value=candidates.some(p=>p.id===previous)?previous:activePageId;
+  // Do not silently carry pending replacements into a different scope/role filter.
+  mapping.clear();enabled.clear();renderRows();schedule()
+ }
+ for(const [key,label] of uiFigureColorRoles){const l=document.createElement('label'),c=document.createElement('input');c.type='checkbox';c.checked=roles.has(key);c.dataset.colorRole=key;c.onchange=()=>{if(c.checked)roles.add(key);else roles.delete(key);refresh()};l.append(c,document.createTextNode(' '+label));$('#uiFigColorRoles').append(l)}
+ scope.onchange=refresh;pageSelect.onchange=preview;$('#uiFigColorSearch').oninput=renderRows;
+ const compare=value=>{after=value;$('#uiFigColorBefore').classList.toggle('active',!after);$('#uiFigColorAfter').classList.toggle('active',after);preview()};
+ $('#uiFigColorBefore').onclick=()=>compare(false);$('#uiFigColorAfter').onclick=()=>compare(true);
+ $('#uiFigColorReset').onclick=()=>{mapping.clear();enabled.clear();renderRows();schedule()};
+ $('#uiFigColorCancel').onclick=closeModal;
+ $('#uiFigColorApply').onclick=()=>{try{if(scope.value==='all'&&!confirm('Apply these replacements across all pages? Undo is separate on each affected page.'))return;const result=uiFigureColorApply(scope.value,roles,activeMapping());closeModal();showToast(result.slots+' color slots updated on '+result.pages+' page(s)')}catch(e){showToast(e.message)}};
+ refresh()
+}
+uiReviewPaths.figureColors='<circle cx="7" cy="7" r="4"/><circle cx="17" cy="7" r="4"/><circle cx="7" cy="17" r="4"/><circle cx="17" cy="17" r="4"/>';
+const uiFigureColorButton=nxButton('uiFigureColorsBtn','Figure colors',uiFigureColorDialog,$('#groupBtn').parentElement);
+uiFigureColorButton.classList.add('ui-review-icon');uiReviewToolLabel(uiFigureColorButton,'figureColors','Figure colors');uiFigureColorButton.title='Inspect and selectively replace colors across editable figure artwork';
+const uiFigureColorCss=document.createElement('style');uiFigureColorCss.textContent='.ui-fig-color-preview{height:200px;background:repeating-conic-gradient(#e9eff3 0% 25%,#fff 0% 50%) 0 0/16px 16px;border:1px solid #d6e1ea;border-radius:6px;overflow:hidden;margin:10px 0}.ui-fig-color-preview svg{width:100%;height:100%;display:block;pointer-events:none}.ui-fig-color-rows{max-height:300px;overflow:auto;border:1px solid #d6e1ea;border-radius:6px;padding:4px 8px;margin:6px 0 10px}.ui-fig-color-row{display:grid;grid-template-columns:16px 24px minmax(0,1fr) 12px auto;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #e8eef3}.ui-fig-color-row:last-child{border-bottom:0}.ui-fig-color-original{width:23px;height:23px;border:1px solid #acbdca;border-radius:4px}.ui-fig-color-row strong,.ui-fig-color-row small{display:block;font-size:11px;overflow-wrap:anywhere}.ui-fig-color-row small{color:#607b8b;font-size:10px}.ui-fig-color-dest{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:3px;max-width:130px}.ui-fig-color-dest input[type=color]{width:32px;height:26px;padding:1px;border:1px solid #cadbe5;border-radius:4px}.ui-fig-color-code{font-size:10px;color:#526b80;font-family:monospace}';document.head.append(uiFigureColorCss);
 
 nxFitAvailable();
 </script>

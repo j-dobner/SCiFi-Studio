@@ -323,6 +323,65 @@ with sync_playwright() as p:
         assert page.locator("#uiPainterBtn").get_attribute("aria-pressed") == "true"
         page.keyboard.press("Escape")
         assert page.locator("#uiPainterBtn").get_attribute("aria-pressed") == "false"
+        # v23.3: actual native color inventory, simultaneous replacement and clone-only preview.
+        page.evaluate("""() => {
+            const a=rect(30,40,50,40,'#112233',4);a.strokeColor='#445566';
+            const b=rect(90,40,50,40,'#445566',4);b.strokeColor='#112233';
+            const g=rect(150,40,50,40,'#778899',4);
+            g.fillGradient={kind:'linear',angle:45,stops:[{offset:0,color:'#112233',opacity:1},{offset:1,color:'#445566',opacity:1}]};
+            const tx=txt('H2O',20,90,20,'#445566');
+            tx.richRuns=[{start:1,end:2,style:{script:'sub',color:'#112233',highlight:'#aabbcc'}}];
+            const nested={id:uid(),type:'symbol',name:'Native test',x:10,y:10,w:100,h:100,sourceW:200,sourceH:160,children:[a,b,g,tx],color:'#deadde',opacity:1};
+            const locked=rect(220,20,50,40,'#112233',4);locked.locked=true;
+            objects=[nested,locked];selectOnly(nested.id);render();
+            window.figColorBefore=JSON.stringify(objects);
+        }""")
+        page.locator("#uiFigureColorsBtn").click()
+        assert page.locator("[data-source-color='#112233']").count() == 1
+        assert page.locator("[data-source-color='#DEADDE']").count() == 0
+        assert page.locator("[data-source-color='#778899']").count() == 0
+        page.locator("#uiFigColor-112233").fill("#445566")
+        page.locator("#uiFigColor-445566").fill("#112233")
+        page.wait_for_function("() => document.querySelector('#uiFigColorPreview').innerHTML.includes('#445566')")
+        assert page.evaluate("JSON.stringify(objects)===window.figColorBefore")
+        page.locator("#uiFigColorBefore").click()
+        page.locator("#uiFigColorAfter").click()
+        page.locator("#uiFigColorCancel").click()
+        assert page.evaluate("JSON.stringify(objects)===window.figColorBefore")
+        page.locator("#uiFigureColorsBtn").click()
+        page.locator("#uiFigColor-112233").fill("#445566")
+        page.locator("#uiFigColor-445566").fill("#112233")
+        page.locator("#uiFigColorApply").click()
+        assert page.evaluate("objects[0].children[0].fill") == "#445566"
+        assert page.evaluate("objects[0].children[1].fill") == "#112233"
+        assert page.evaluate("objects[0].children[0].strokeColor") == "#112233"
+        assert page.evaluate("objects[0].children[2].fillGradient.stops[0].color") == "#445566"
+        assert page.evaluate("objects[0].children[3].richRuns[0].style.color") == "#445566"
+        assert page.evaluate("objects[0].children[3].richRuns[0].style.script") == "sub"
+        assert page.evaluate("objects[1].fill") == "#112233"
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.figColorBefore")
+        # All-page replacements preserve page-local undo and leave library assets untouched.
+        page.evaluate("""() => {
+            const asset=assets.find(a=>a.kind==='group'&&a.elements?.length);
+            window.figLibraryBefore=JSON.stringify(asset.elements);
+            window.figLibraryId=asset.id;
+            makeCompoundIcon(asset,60,60);
+            const row=uiFigureColorInventory('selection',new Set(['fill']))[0];
+            if(!row)throw Error('Native icon has no editable fills');
+            window.figRealColor=row.color;
+            uiFigureColorApply('selection',new Set(['fill']),new Map([[row.color,'#ABCDEF']]));
+            if(JSON.stringify(byId[asset.id].elements)!==window.figLibraryBefore)throw Error('Library artwork was modified');
+            undo();
+            appendPage(false);objects=[rect(20,20,30,30,'#112233',0)];render();
+            uiFigureColorApply('all',new Set(['fill']),new Map([['#112233','#FEDCBA']]));
+        }""")
+        assert page.evaluate("objects[0].fill") == "#FEDCBA"
+        assert page.evaluate("pages[0].elements[0].children[0].fill") == "#FEDCBA"
+        page.evaluate("activatePage(pages[0].id);undo()")
+        assert page.evaluate("objects[0].children[0].fill") == "#112233"
+        page.evaluate("removeCurrentPage") # no mutation; reset test fixture to a single page
+        page.evaluate("pages=pages.filter(p=>p.id===activePageId);render()")
         # v23.1: recovery preserves multiple pages, guides and native objects across reloads.
         page.wait_for_function("() => uiRecReady && !uiRecBusy")
         page.evaluate("""() => {
