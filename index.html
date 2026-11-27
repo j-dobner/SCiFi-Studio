@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 — Rulers and guides review 6</title>
+<title>SCiFi Studio v23 — Workspace preferences review 7</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 6</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 7</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -3232,7 +3232,7 @@ function uiPropsDecorate(){
   const indicator=document.createElement('span');indicator.className='ui-props-indicator';indicator.setAttribute('aria-hidden','true');b.append(title,indicator);
   heading.classList.add('ui-props-heading');heading.replaceChildren(b);
   const update=()=>{const open=!uiPropsClosed.has(key);body.hidden=!open;sec.classList.toggle('ui-props-closed',!open);b.setAttribute('aria-expanded',String(open));b.title=(open?'Collapse ':'Expand ')+label;indicator.textContent=open?'−':'+'};
-  b.onclick=()=>{if(uiPropsClosed.has(key))uiPropsClosed.delete(key);else uiPropsClosed.add(key);update()};update();
+  b.onclick=()=>{if(uiPropsClosed.has(key))uiPropsClosed.delete(key);else uiPropsClosed.add(key);update();window.scifiWorkspaceSave?.()};update();
  }
 }
 const uiPropsOriginal=renderInspector;renderInspector=function(){uiPropsOriginal();uiPropsDecorate()};
@@ -3342,7 +3342,7 @@ for(const side of ['left','right']){
   const before=drag.before;drag=null;
   if(grip.hasPointerCapture(e.pointerId))grip.releasePointerCapture(e.pointerId);
   grip.classList.remove('ui-dragging');document.body.classList.remove('ui-resize-active');
-  if(cancel){uiResizeDesired[side]=before;uiResizeApply()}
+  if(cancel){uiResizeDesired[side]=before;uiResizeApply()}else window.scifiWorkspaceSave?.();
  };
  grip.addEventListener('pointerdown',e=>{
   if(e.button!==0||grip.hidden)return;e.preventDefault();e.stopPropagation();
@@ -3351,13 +3351,13 @@ for(const side of ['left','right']){
  });
  grip.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;e.preventDefault();uiResizeSet(side,drag.width+(e.clientX-drag.x)*(side==='left'?1:-1))});
  grip.addEventListener('pointerup',e=>finish(e));grip.addEventListener('pointercancel',e=>finish(e,true));grip.addEventListener('lostpointercapture',e=>finish(e));
- grip.addEventListener('dblclick',e=>{e.preventDefault();if(uiResizePanelWidth(side)<=uiResizeMin(side)+1){uiResizeDesired[side]=uiResizeRestore[side];uiResizeRestore[side]=null;uiResizeApply()}else{uiResizeRestore[side]=uiResizeDesired[side];uiResizeSet(side,uiResizeMin(side))}});
+ grip.addEventListener('dblclick',e=>{e.preventDefault();if(uiResizePanelWidth(side)<=uiResizeMin(side)+1){uiResizeDesired[side]=uiResizeRestore[side];uiResizeRestore[side]=null;uiResizeApply()}else{uiResizeRestore[side]=uiResizeDesired[side];uiResizeSet(side,uiResizeMin(side))}window.scifiWorkspaceSave?.()});
  grip.addEventListener('keydown',e=>{
   if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();
-  if(e.key==='Home'){uiResizeDesired[side]=null;uiResizeRestore[side]=null;uiResizeApply();return}
-  if(e.key==='End'){uiResizeSet(side,uiResizeMax(side));return}
+  if(e.key==='Home'){uiResizeDesired[side]=null;uiResizeRestore[side]=null;uiResizeApply();window.scifiWorkspaceSave?.();return}
+  if(e.key==='End'){uiResizeSet(side,uiResizeMax(side));window.scifiWorkspaceSave?.();return}
   const step=e.shiftKey?40:10,dir=(e.key==='ArrowRight'?1:-1)*(side==='left'?1:-1);
-  uiResizeSet(side,uiResizePanelWidth(side)+step*dir);
+  uiResizeSet(side,uiResizePanelWidth(side)+step*dir);window.scifiWorkspaceSave?.();
  });
 }
 const uiResizeOriginalPanels=nxUpdatePanels;nxUpdatePanels=function(){uiResizeOriginalPanels();uiResizeApply()};
@@ -3532,6 +3532,64 @@ const uiRulerSizeBase=setCanvasSize;setCanvasSize=function(w,h,r=true){uiRulerSi
 uiRulerShell.addEventListener('scroll',uiGuideSchedule,{passive:true});window.addEventListener('resize',uiGuideSchedule);
 const uiRulerObserver=new ResizeObserver(uiGuideSchedule);uiRulerObserver.observe(uiRulerShell);
 uiRulerSet(false);
+
+/* UI review 7: browser-local workspace preferences, independent of document contents. */
+const uiWorkspaceKey='scifi.ui.workspace.v1';
+let uiWorkspaceApplying=false;
+function uiWorkspaceDefaults(){return {version:1,panels:{left:false,right:false,pages:false,tools:false},widths:{left:null,right:null},restoreWidths:{left:null,right:null},sections:[],rulers:false,grid:false,repeat:'auto',categoryChips:false,individualVariants:false,insertLabel:false,thumbnail:'normal',snap:{snap:true,gridSnap:false,grid:20,tolerance:7,margin:20,angle:45}}}
+function uiWorkspaceStorageAvailable(){try{const key=uiWorkspaceKey+'.probe';localStorage.setItem(key,'1');localStorage.removeItem(key);return true}catch{return false}}
+function uiWorkspaceNormalize(raw){
+ const d=uiWorkspaceDefaults(),p=raw&&typeof raw==='object'?raw:{};
+ const boolean=(v,f)=>typeof v==='boolean'?v:f;
+ const width=v=>typeof v==='number'&&Number.isFinite(v)?Math.min(520,Math.max(180,Math.round(v))):null;
+ const number=(v,f,min,max)=>typeof v==='number'&&Number.isFinite(v)?Math.max(min,Math.min(max,v)):f;
+ for(const id of Object.keys(d.panels))d.panels[id]=boolean(p.panels?.[id],false);
+ for(const side of ['left','right']){d.widths[side]=width(p.widths?.[side]);d.restoreWidths[side]=width(p.restoreWidths?.[side])}
+ d.sections=Array.isArray(p.sections)?[...new Set(p.sections.filter(v=>typeof v==='string'&&v.length<=120))].slice(0,100):[];
+ for(const k of ['rulers','grid','categoryChips','individualVariants','insertLabel'])d[k]=boolean(p[k],d[k]);
+ if(['auto','repeat','single'].includes(p.repeat))d.repeat=p.repeat;
+ if(['compact','normal','large'].includes(p.thumbnail))d.thumbnail=p.thumbnail;
+ d.snap.snap=boolean(p.snap?.snap,true);d.snap.gridSnap=boolean(p.snap?.gridSnap,false);
+ for(const [k,min,max] of [['grid',2,200],['tolerance',2,20],['margin',0,250],['angle',5,90]])d.snap[k]=number(p.snap?.[k],d.snap[k],min,max);
+ return d;
+}
+function uiWorkspaceRead(){try{const raw=localStorage.getItem(uiWorkspaceKey);return raw===null?null:uiWorkspaceNormalize(JSON.parse(raw))}catch{return null}}
+function uiWorkspaceCapture(){
+ const panels=nxFocusRestore||nxPanelState;
+ return uiWorkspaceNormalize({panels,widths:uiResizeDesired,restoreWidths:uiResizeRestore,sections:[...uiPropsClosed],rulers:uiRulersOn,grid,repeat:$('#scifiRepeatMode').value,categoryChips:showCategoryChips,individualVariants:$('#scifiShowEach').checked,insertLabel:$('#insertAssetWithLabel').checked,thumbnail:uiLibSize,snap:{snap:scifiNext.snap,gridSnap:scifiNext.gridSnap,grid:scifiNext.grid,tolerance:scifiNext.tolerance,margin:scifiNext.margin,angle:scifiNext.angle}});
+}
+function uiWorkspaceSave(){if(uiWorkspaceApplying)return false;try{localStorage.setItem(uiWorkspaceKey,JSON.stringify(uiWorkspaceCapture()));return true}catch{return false}}
+window.scifiWorkspaceSave=uiWorkspaceSave;
+function uiWorkspaceApply(raw){
+ const p=uiWorkspaceNormalize(raw);uiWorkspaceApplying=true;
+ try{
+  nxFocusRestore=null;Object.assign(nxPanelState,p.panels);Object.assign(uiResizeDesired,p.widths);Object.assign(uiResizeRestore,p.restoreWidths);
+  uiPropsClosed.clear();p.sections.forEach(v=>uiPropsClosed.add(v));
+  grid=p.grid;$('#gridBtn').classList.toggle('active',grid);$('#scifiRepeatMode').value=p.repeat;
+  showCategoryChips=p.categoryChips;$('#scifiShowEach').checked=p.individualVariants;$('#insertAssetWithLabel').checked=p.insertLabel;
+  uiLibSetSize(p.thumbnail);Object.assign(scifiNext,p.snap);scifiNext.guide=[];nxSnapBadge();
+  uiRulerSet(p.rulers);nxUpdatePanels();renderCategories();renderAssets();render();
+ }finally{uiWorkspaceApplying=false}
+}
+function uiWorkspaceReset(){
+ uiWorkspaceApply(uiWorkspaceDefaults());try{localStorage.removeItem(uiWorkspaceKey)}catch{};showToast('Workspace preferences reset');nxFitAvailable();
+}
+const uiWorkspacePanelBase=nxUpdatePanels;nxUpdatePanels=function(){uiWorkspacePanelBase();uiWorkspaceSave()};
+const uiWorkspaceRulerBase=uiRulerSet;uiRulerSet=function(on){uiWorkspaceRulerBase(on);uiWorkspaceSave()};
+const uiWorkspaceSnapBase=nxSnapBadge;nxSnapBadge=function(){uiWorkspaceSnapBase();uiWorkspaceSave()};
+const uiWorkspaceSizeBase=uiLibSetSize;uiLibSetSize=function(v){uiWorkspaceSizeBase(v);uiWorkspaceSave()};
+for(const id of ['scifiRepeatMode','scifiShowEach','insertAssetWithLabel'])$('#'+id).addEventListener('change',uiWorkspaceSave);
+for(const id of ['gridBtn','categoryModeBtn'])$('#'+id).addEventListener('click',uiWorkspaceSave);
+function uiWorkspaceDialog(){
+ modal('<h2>Workspace preferences</h2><p>SCiFi remembers your usual workspace on this browser. Preferences never change the figure, page guides or exported artwork.</p><div class="nx-help-box" id="uiWorkspaceStatus"></div><div class="nx-checks"><label><input id="uiPrefRulers" type="checkbox"> Show rulers</label><label><input id="uiPrefGrid" type="checkbox"> Show canvas grid</label><label><input id="uiPrefSnap" type="checkbox"> Smart snapping</label><label><input id="uiPrefGridSnap" type="checkbox"> Grid snapping</label></div><div class="nx-grid"><label class="nx-field">Tool behavior<select id="uiPrefRepeat"><option value="auto">Auto</option><option value="repeat">Repeat</option><option value="single">Single</option></select></label><label class="nx-field">Thumbnail size<select id="uiPrefThumb"><option value="compact">Compact</option><option value="normal">Standard</option><option value="large">Large</option></select></label></div><p>Panel widths, collapse states and Properties sections are saved automatically as you edit. Focus canvas is temporary.</p><div class="actiongrid"><button class="btn primary" id="uiPrefApply">Apply preferences</button><button class="btn" id="uiPrefReset">Reset workspace</button></div><p class="hint">Reset restores the original workspace layout and editing defaults. Your project, favorites, recent illustrations and colors are preserved. Standalone HTML files may have separate browser storage when moved or renamed.</p>');
+ const p=uiWorkspaceCapture();
+ $('#uiWorkspaceStatus').textContent=uiWorkspaceStorageAvailable()?'Preferences are saved locally in this browser. No account or internet connection is required.':'Local storage is unavailable. Changes apply for the current session only.';
+ $('#uiPrefRulers').checked=p.rulers;$('#uiPrefGrid').checked=p.grid;$('#uiPrefSnap').checked=p.snap.snap;$('#uiPrefGridSnap').checked=p.snap.gridSnap;$('#uiPrefRepeat').value=p.repeat;$('#uiPrefThumb').value=p.thumbnail;
+ $('#uiPrefApply').onclick=()=>{const v=uiWorkspaceCapture();v.rulers=$('#uiPrefRulers').checked;v.grid=$('#uiPrefGrid').checked;v.snap.snap=$('#uiPrefSnap').checked;v.snap.gridSnap=$('#uiPrefGridSnap').checked;v.repeat=$('#uiPrefRepeat').value;v.thumbnail=$('#uiPrefThumb').value;closeModal();uiWorkspaceApply(v);const saved=uiWorkspaceSave();showToast(saved?'Workspace preferences saved':'Workspace preferences applied for this session')};
+ $('#uiPrefReset').onclick=()=>{closeModal();uiWorkspaceReset()};
+}
+const uiWorkspaceButton=nxButton('uiWorkspacePrefs','Preferences',uiWorkspaceDialog,nx207Actions);uiWorkspaceButton.title='Workspace preferences and reset layout';uiWorkspaceButton.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/><circle cx="10" cy="18" r="2" fill="white"/></svg><span>Preferences</span>';
+const uiWorkspaceStored=uiWorkspaceRead();if(uiWorkspaceStored)uiWorkspaceApply(uiWorkspaceStored);
 
 nxFitAvailable();
 </script>

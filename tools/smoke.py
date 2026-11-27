@@ -251,6 +251,38 @@ with sync_playwright() as p:
             if kind==b"pHYs": chunks.append(struct.unpack(">IIB",data))
             pos+=12+n
         assert chunks==[(11811,11811,1)]
+        # UI review 7: workspace persistence and reset without changing project data.
+        assert page.evaluate("uiWorkspaceStorageAvailable()")
+        page.evaluate("uiResizeSet('left',340);uiWorkspaceSave()")
+        page.locator("#gridBtn").click()
+        page.locator("#uiRulerToggle").click()
+        page.locator("#scifiRepeatMode").select_option("repeat")
+        page.locator("#uiLibSize").select_option("large")
+        page.locator("#nxToggle-pages").click()
+        page.locator("#nxFocusCanvas").click()
+        assert page.evaluate("uiWorkspaceRead().panels.left") is False
+        assert page.evaluate("uiWorkspaceRead().panels.pages") is True
+        page.locator("#nxFocusCanvas").click()
+        page.reload()
+        page.wait_for_selector("[data-asset]")
+        assert page.evaluate("uiResizeDesired.left") == 340
+        assert page.evaluate("grid") is True
+        assert page.locator("#uiRulerTop").is_visible()
+        assert page.locator("#scifiRepeatMode").input_value() == "repeat"
+        assert page.locator("#uiLibSize").input_value() == "large"
+        assert page.locator("#nxToggle-pages").get_attribute("aria-expanded") == "false"
+        assert page.locator("#nxToggle-left").get_attribute("aria-expanded") == "true"
+        page.evaluate("uiGuideAdd('x',10)")
+        before=page.evaluate("JSON.stringify(currentProjectData())")
+        page.locator("#uiWorkspacePrefs").click()
+        page.locator("#uiPrefReset").click()
+        assert page.evaluate("JSON.stringify(currentProjectData())") == before
+        assert page.evaluate("uiResizeDesired.left") is None
+        assert page.evaluate("grid") is False
+        assert not page.locator("#uiRulerTop").is_visible()
+        assert page.locator("#scifiRepeatMode").input_value() == "auto"
+        assert page.locator("#uiLibSize").input_value() == "normal"
+        assert page.locator("#nxToggle-pages").get_attribute("aria-expanded") == "true"
         assert not errors, errors
         page.close()
     browser.close()
