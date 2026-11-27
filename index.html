@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 — Library review 3</title>
+<title>SCiFi Studio v23 — Sidebar review 4</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 3</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 4</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -3303,6 +3303,65 @@ const uiLibCss=document.createElement('style');uiLibCss.id='uiReviewLibrary';uiL
 '.app #assets[data-thumbnail-size=large]{grid-template-columns:minmax(0,1fr)}.app #assets[data-thumbnail-size=large] .asset{min-height:170px}.app #assets[data-thumbnail-size=large] .asset svg,.app #assets[data-thumbnail-size=large] .asset img{width:min(155px,100%);height:125px}.app #assets[data-thumbnail-size=large] .asset .nm{font-size:12px}',
 '.ui-lib-variant-wrap{display:flex;align-items:center;gap:5px}.ui-lib-variant-wrap .scifi-variant-row{flex:1;min-width:0}.ui-lib-variant-wrap .ui-lib-variant-star{margin-right:3px}'
 ].join('\n');document.head.append(uiLibCss);renderAssets();
+
+/* UI review 4: adjustable sidebars with the original responsive defaults. */
+const uiResizeBody=$('.app .body'),uiResizeDesired={left:null,right:null},uiResizeHandles={},uiResizeNames={left:'Illustration library',right:'Properties'};
+const uiResizeCss=document.createElement('style');uiResizeCss.id='uiReviewSidebars';uiResizeCss.textContent=[
+'.app:not(.nx-hide-left) .body.ui-resize-custom-left{--nx-left:var(--ui-resize-left)}.app:not(.nx-hide-right) .body.ui-resize-custom-right{--nx-right:var(--ui-resize-right)}',
+'.ui-resize-handle{grid-column:2;grid-row:1;align-self:stretch;position:relative;z-index:5;width:7px;min-width:0;cursor:col-resize;touch-action:none;outline-offset:-2px;box-sizing:border-box}.ui-resize-handle[data-side=left]{justify-self:start}.ui-resize-handle[data-side=right]{justify-self:end}.ui-resize-handle::before{content:"";position:absolute;inset:0 auto 0 2px;width:2px;background:#d6e1ea}.ui-resize-handle::after{content:"";position:absolute;left:1px;top:50%;width:4px;height:28px;transform:translateY(-50%);border-radius:3px;background:#91adbf}.ui-resize-handle:hover,.ui-resize-handle:focus-visible,.ui-resize-handle.ui-dragging{background:#e2edf5}.ui-resize-handle:hover::before,.ui-resize-handle:focus-visible::before,.ui-resize-handle.ui-dragging::before{background:#527a94}.ui-resize-handle[hidden]{display:none!important}.app.nx-hide-left .ui-resize-handle[data-side=left],.app.nx-hide-right .ui-resize-handle[data-side=right]{display:none!important}',
+'body.ui-resize-active,body.ui-resize-active *{cursor:col-resize!important;user-select:none!important;-webkit-user-select:none!important}@media(max-width:850px){.ui-resize-handle{display:none!important}}'
+].join('\n');document.head.append(uiResizeCss);
+function uiResizePanelWidth(side){return Math.round($('.app .body>.'+side).getBoundingClientRect().width)}
+function uiResizeMin(side){return side==='left'?180:200}
+function uiResizeMax(side){const other=side==='left'?'right':'left';return Math.max(uiResizeMin(side),Math.min(520,uiResizeBody.clientWidth-uiResizePanelWidth(other)-280))}
+function uiResizeClamp(side,value){return Math.max(uiResizeMin(side),Math.min(uiResizeMax(side),Math.round(value)))}
+function uiResizeApply(){
+ for(const side of ['left','right'])uiResizeBody.classList.remove('ui-resize-custom-'+side);
+ if(innerWidth>850)for(const side of ['left','right']){
+  if(nxPanelState[side]||uiResizeDesired[side]===null)continue;
+  uiResizeBody.style.setProperty('--ui-resize-'+side,uiResizeClamp(side,uiResizeDesired[side])+'px');
+  uiResizeBody.classList.add('ui-resize-custom-'+side);
+ }
+ for(const side of ['left','right']){
+  const grip=uiResizeHandles[side];if(!grip)continue;grip.hidden=!!nxPanelState[side]||innerWidth<=850;
+  grip.setAttribute('aria-valuemin',String(uiResizeMin(side)));
+  grip.setAttribute('aria-valuemax',String(uiResizeMax(side)));
+  grip.setAttribute('aria-valuenow',String(uiResizePanelWidth(side)));
+  grip.setAttribute('aria-valuetext',uiResizePanelWidth(side)+' pixels');
+ }
+}
+function uiResizeSet(side,value){uiResizeDesired[side]=uiResizeClamp(side,value);uiResizeApply()}
+for(const side of ['left','right']){
+ const grip=document.createElement('div');grip.className='ui-resize-handle';grip.id='uiResize-'+side;grip.dataset.side=side;grip.tabIndex=0;
+ grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','vertical');grip.setAttribute('aria-label','Resize '+uiResizeNames[side]);
+ grip.title='Drag to resize '+uiResizeNames[side]+'. Double-click to reset. Arrow keys resize; Shift for larger steps.';
+ uiResizeBody.append(grip);uiResizeHandles[side]=grip;
+ let drag=null;
+ const finish=(e,cancel=false)=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  const before=drag.before;drag=null;
+  if(grip.hasPointerCapture(e.pointerId))grip.releasePointerCapture(e.pointerId);
+  grip.classList.remove('ui-dragging');document.body.classList.remove('ui-resize-active');
+  if(cancel){uiResizeDesired[side]=before;uiResizeApply()}
+ };
+ grip.addEventListener('pointerdown',e=>{
+  if(e.button!==0||grip.hidden)return;e.preventDefault();e.stopPropagation();
+  drag={id:e.pointerId,x:e.clientX,width:uiResizePanelWidth(side),before:uiResizeDesired[side]};
+  grip.setPointerCapture(e.pointerId);grip.classList.add('ui-dragging');document.body.classList.add('ui-resize-active');
+ });
+ grip.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;e.preventDefault();uiResizeSet(side,drag.width+(e.clientX-drag.x)*(side==='left'?1:-1))});
+ grip.addEventListener('pointerup',e=>finish(e));grip.addEventListener('pointercancel',e=>finish(e,true));grip.addEventListener('lostpointercapture',e=>finish(e));
+ grip.addEventListener('dblclick',e=>{e.preventDefault();uiResizeDesired[side]=null;uiResizeApply()});
+ grip.addEventListener('keydown',e=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();
+  if(e.key==='Home'){uiResizeDesired[side]=null;uiResizeApply();return}
+  if(e.key==='End'){uiResizeSet(side,uiResizeMax(side));return}
+  const step=e.shiftKey?40:10,dir=(e.key==='ArrowRight'?1:-1)*(side==='left'?1:-1);
+  uiResizeSet(side,uiResizePanelWidth(side)+step*dir);
+ });
+}
+const uiResizeOriginalPanels=nxUpdatePanels;nxUpdatePanels=function(){uiResizeOriginalPanels();uiResizeApply()};
+window.addEventListener('resize',uiResizeApply);uiResizeApply();
 
 nxFitAvailable();
 </script>

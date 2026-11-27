@@ -89,6 +89,37 @@ with sync_playwright() as p:
         assert page.evaluate("selectedObj().color") == "#007700"
         assert page.evaluate("selectedObj().richRuns[0].style.italic")
         assert page.evaluate("!('color' in selectedObj().richRuns[0].style)")
+        # UI review 4: drag widths, keyboard accessibility and collapse/restore.
+        page.set_viewport_size({"width": 1440, "height": 900})
+        initial_left=page.evaluate("uiResizePanelWidth('left')")
+        initial_right=page.evaluate("uiResizePanelWidth('right')")
+        left_grip=page.locator("#uiResize-left")
+        right_grip=page.locator("#uiResize-right")
+        box=left_grip.bounding_box()
+        page.mouse.move(box["x"]+box["width"]/2,box["y"]+box["height"]/2)
+        page.mouse.down()
+        page.mouse.move(box["x"]+box["width"]/2+80,box["y"]+box["height"]/2,steps=6)
+        page.mouse.up()
+        assert page.evaluate("uiResizePanelWidth('left')") == initial_left+80
+        right_grip.focus()
+        right_grip.press("ArrowLeft")
+        assert page.evaluate("uiResizePanelWidth('right')") == initial_right+10
+        page.locator("#nxToggle-left").click()
+        assert not left_grip.is_visible()
+        page.locator("#nxToggle-left").click()
+        assert page.evaluate("uiResizePanelWidth('left')") == initial_left+80
+        page.locator("#nxFocusCanvas").click()
+        assert not left_grip.is_visible() and not right_grip.is_visible()
+        page.locator("#nxFocusCanvas").click()
+        assert page.evaluate("uiResizePanelWidth('right')") == initial_right+10
+        left_grip.dblclick()
+        assert page.evaluate("uiResizePanelWidth('left')") == initial_left
+        right_grip.focus()
+        right_grip.press("Home")
+        assert page.evaluate("uiResizePanelWidth('right')") == initial_right
+        page.set_viewport_size({"width": 800, "height": 900})
+        assert not left_grip.is_visible() and not right_grip.is_visible()
+        page.set_viewport_size({"width": 1280, "height": 720})
         # UI review 3: favorite, filter, exact-variant insertion, thumbnail sizes.
         assert page.locator("#uiLibAll").get_attribute("aria-pressed") == "true"
         page.locator("#assetSearch").fill("")

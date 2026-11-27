@@ -14,6 +14,10 @@ v22.1 public preview · 27 November 2026
 
 The preview contains vector drawing and layout tools, editable paths and shapes, text and arrows, an icon editor, synthetic plot tools, local project import/export and 471 editable scientific illustrations: 329 molecular biology, 13 human organoids, 36 expanded cell atlas, 19 early progenitors, 17 original lineage illustrations, 34 embryogenesis illustrations and all 23 Carnegie stages. Molecular variants are grouped into families by default; enable **Show individual variants** for the complete count. Other unresolved private artwork, including laboratory essentials, branded instruments and legacy drawings, is excluded.
 
+## v23 UI review 4 — Resizable sidebars
+
+Drag the inner edge of the illustration library or Properties panel to adjust its width. Double-click the resize handle (or press Home when focused) to restore the original responsive width. Arrow keys resize by 10 px, Shift by 40 px. Widths remain available across panel collapse and Focus canvas during the session; narrow screens retain the original layout. No document dimensions or artwork are changed.
+
 ## v23 UI review 3 — Illustration library
 
 Adds local favorites of individual variants, a newest-first recent-insertions view, three thumbnail sizes, exact-variant favorites inside the family chooser, and selected scientific search synonyms. All original categories, variant grouping, multi-selection and import/export tools remain available. Preferences are stored in the browser when local storage is available; they are not added to project files.
