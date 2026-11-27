@@ -89,6 +89,26 @@ with sync_playwright() as p:
         assert page.evaluate("selectedObj().color") == "#007700"
         assert page.evaluate("selectedObj().richRuns[0].style.italic")
         assert page.evaluate("!('color' in selectedObj().richRuns[0].style)")
+        # UI review 2: sections open initially and keep their state across rendering.
+        assert page.locator("#inspector .ui-props-toggle").count() >= 5
+        assert page.locator("#inspector .ui-props-toggle[aria-expanded=false]").count() == 0
+        assert page.locator("#inspector .ui-props-section").filter(has=page.locator("#singleFontFamily")).count() == 1
+        assert page.locator("#inspector .ui-props-toggle").filter(has_text="Typography").count() == 1
+        appearance = page.locator("#inspector .ui-props-toggle").filter(has_text="Appearance")
+        appearance.click()
+        assert appearance.get_attribute("aria-expanded") == "false"
+        assert not page.locator("#customColor").is_visible()
+        page.evaluate("render()")
+        assert appearance.get_attribute("aria-expanded") == "false"
+        appearance.click()
+        assert page.locator("#customColor").is_visible()
+        page.locator("#fontSize").fill("24")
+        page.locator("#fontSize").press("Tab")
+        assert page.evaluate("selectedObj().fontSize") == 24
+        page.locator("#nxLayersTab").click()
+        assert page.locator("#nxLayerPanel").is_visible()
+        page.locator("#nxPropsTab").click()
+        assert page.locator("#inspector").is_visible()
         page.evaluate("canvasSizeDialog()")
         page.locator("#pagePreset").select_option("A4")
         page.locator("#pageOrientation").select_option("portrait")

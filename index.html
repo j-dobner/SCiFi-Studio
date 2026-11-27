@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 — Toolbar review 1</title>
+<title>SCiFi Studio v23 — Properties review 2</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 1</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 2</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -3159,6 +3159,88 @@ const uiReviewStyle=document.createElement('style');uiReviewStyle.id='uiReviewTo
  '.app .toolbar .toolgroup+.toolgroup{border-left:1px solid #dce5eb;padding-left:7px}.app .toolbar .mini-select{min-height:32px}'+
  '@media(max-width:850px){.app .toolbar .tool-label{display:none}.app .toolbar .ui-review-icon{padding:5px 6px;font-size:11px}.app .toolbar .toolgroup+.toolgroup{padding-left:0;border-left:0}}';
 document.head.append(uiReviewStyle);
+
+/* UI review 2: organize the existing inspector, without changing project data or controls. */
+const uiPropsClosed=new Set();
+let uiPropsSerial=0;
+const uiPropsIcons={
+ transform:'<path d="M12 2v20M2 12h20M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/>',
+ appearance:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor" opacity=".22"/>',
+ typography:'<path d="M4 5h16M12 5v15M8 20h8"/>',
+ layout:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M6 8h12M6 12h9M6 16h12"/>',
+ align:'<path d="M12 3v18M5 6h14M8 12h8M3 18h18"/>',
+ layers:'<path d="M3 8l9-5 9 5-9 5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
+ flip:'<path d="M12 3v18M4 7l5 5-5 5zM20 7l-5 5 5 5z"/>',
+ advanced:'<path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/><circle cx="10" cy="17" r="2" fill="white"/>',
+ action:'<path d="M12 3v18M3 12h18"/><rect x="5" y="5" width="14" height="14" rx="2"/>',
+ help:'<circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 116 0c0 2-3 2-3 4M12 17h.01"/>'
+};
+function uiPropsIcon(name){return '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+uiPropsIcons[name]+'</svg>'}
+function uiPropsKind(label){
+ if(/position|placement|transform/i.test(label))return 'transform';
+ if(/typography/i.test(label))return 'typography';
+ if(/text & layout/i.test(label))return 'layout';
+ if(/appearance|background/i.test(label))return 'appearance';
+ if(/align|distribution/i.test(label))return 'align';
+ if(/mirror|flip/i.test(label))return 'flip';
+ if(/layers/i.test(label))return 'layers';
+ if(/tips/i.test(label))return 'help';
+ if(/actions|select objects/i.test(label))return 'action';
+ return 'advanced';
+}
+function uiPropsHeading(section,label){
+ const heading=document.createElement('div');heading.className='section-title';heading.textContent=label;section.prepend(heading);return heading;
+}
+function uiPropsNewSection(label,nodes,before){
+ if(!nodes.length)return;
+ const sec=document.createElement('div');sec.className='section';uiPropsHeading(sec,label);
+ before.before(sec);for(const n of nodes)sec.append(n);
+}
+function uiPropsOrganize(root){
+ const appearance=[...root.children].find(s=>s.classList.contains('section')&&s.firstElementChild?.textContent.trim()==='Appearance');
+ if(appearance&&selectedObj()?.type==='text'){
+  // Move existing nodes, preserving their IDs, live values and event listeners.
+  const textStart=appearance.querySelector('#propText')?.closest('.field');
+  const paintStart=[...appearance.children].find(n=>n.classList.contains('fieldlabel'));
+  const fontStart=appearance.querySelector('#fontSize')?.closest('.field');
+  const opacityStart=appearance.querySelector('#opacity')?.closest('.field');
+  if(textStart&&paintStart){const nodes=[];for(let n=textStart;n&&n!==paintStart;n=n.nextElementSibling)nodes.push(n);uiPropsNewSection('Text & layout',nodes,appearance)}
+  if(fontStart&&opacityStart){const nodes=[];for(let n=fontStart;n&&n!==opacityStart;n=n.nextElementSibling)nodes.push(n);
+   const typography=document.createElement('div');typography.className='section';uiPropsHeading(typography,'Typography');appearance.after(typography);for(const n of nodes)typography.append(n);
+  }
+ }
+ // The original path editor embeds a complete section in Appearance; give it its own toggle.
+ if(appearance)for(const child of [...appearance.children])if(child.classList.contains('section')&&child.querySelector('.section-title'))appearance.after(child);
+ // Object-specific extensions already have their own controls; label unheaded groups.
+ for(const sec of [...root.children]){
+  if(!sec.classList.contains('section')||[...sec.children].some(n=>n.classList.contains('section-title'))||sec.querySelector('.prop-name,.eyebrow'))continue;
+  const first=sec.querySelector('button');
+  if(first)uiPropsHeading(sec,first.textContent.includes('Save as reusable')?'Reusable illustration':first.textContent.includes('molecular')?'Molecular settings':'Biological settings');
+ }
+}
+function uiPropsDecorate(){
+ const root=$('#inspector');uiPropsOrganize(root);
+ for(const sec of [...root.querySelectorAll('.section')]){
+  const heading=[...sec.children].find(n=>n.classList.contains('section-title'));
+  if(!heading||heading.querySelector('button'))continue;
+  const label=heading.textContent.trim(),kind=uiPropsKind(label),key=label.replace(/ · \d+ (labels|contours)$/,'');
+  const body=document.createElement('div');body.className='ui-props-body';body.id='ui-props-content-'+(++uiPropsSerial);
+  while(heading.nextSibling)body.append(heading.nextSibling);sec.append(body);sec.classList.add('ui-props-section');
+  const b=document.createElement('button');b.type='button';b.className='ui-props-toggle';b.setAttribute('aria-controls',body.id);
+  const title=document.createElement('span');title.className='ui-props-name';title.innerHTML=uiPropsIcon(kind);const txt=document.createElement('span');txt.textContent=label;title.append(txt);
+  const indicator=document.createElement('span');indicator.className='ui-props-indicator';indicator.setAttribute('aria-hidden','true');b.append(title,indicator);
+  heading.classList.add('ui-props-heading');heading.replaceChildren(b);
+  const update=()=>{const open=!uiPropsClosed.has(key);body.hidden=!open;sec.classList.toggle('ui-props-closed',!open);b.setAttribute('aria-expanded',String(open));b.title=(open?'Collapse ':'Expand ')+label;indicator.textContent=open?'−':'+'};
+  b.onclick=()=>{if(uiPropsClosed.has(key))uiPropsClosed.delete(key);else uiPropsClosed.add(key);update()};update();
+ }
+}
+const uiPropsOriginal=renderInspector;renderInspector=function(){uiPropsOriginal();uiPropsDecorate()};
+const uiPropsCss=document.createElement('style');uiPropsCss.id='uiReviewProperties';uiPropsCss.textContent=[
+'.app #inspector .ui-props-section{padding:0 12px 9px;border-top:1px solid #e1e9ee}.app #inspector .ui-props-section.ui-props-closed{padding-bottom:0}.app #inspector .ui-props-heading{margin:0 -4px 9px;font-size:12px;letter-spacing:0;text-transform:none;color:#36566b}.app #inspector .ui-props-closed .ui-props-heading{margin-bottom:0}',
+'.ui-props-toggle{display:flex;width:100%;justify-content:space-between;align-items:center;gap:6px;min-height:36px;border:0;border-radius:5px;background:transparent;padding:7px 4px;color:#36566b;font:inherit;font-weight:720;text-align:left;cursor:pointer}.ui-props-toggle:hover{background:#edf4f9;color:#244b65}.ui-props-name{display:flex;align-items:center;gap:7px;min-width:0}.ui-props-name svg{flex:none;color:#527a94}.ui-props-name span{overflow-wrap:anywhere}.ui-props-indicator{flex:none;width:21px;height:21px;display:grid;place-items:center;border:1px solid #cfdee8;border-radius:4px;background:#f4f8fc;color:#426b86;font-size:16px;line-height:1;font-weight:650}.ui-props-body[hidden]{display:none!important}',
+'.app #inspector .ui-props-body .field{gap:4px;margin-bottom:9px}.app #inspector .ui-props-body .field label,.app #inspector .ui-props-body .fieldlabel{font-size:11px;color:#486779}.app #inspector .ui-props-body .fields2{gap:0 8px}.app #inspector .ui-props-body input:not([type=checkbox]):not([type=range]):not([type=color]),.app #inspector .ui-props-body select,.app #inspector .ui-props-body textarea{border:1px solid #cfdee7;border-radius:6px;background:#fff;color:#2c4b60;min-width:0;max-width:100%;font-variant-numeric:tabular-nums}.app #inspector .ui-props-body textarea{padding:7px;line-height:1.45}.app #inspector .ui-props-body .shared-note,.app #inspector .ui-props-body .ratio-note{line-height:1.45;color:#567282}.app #inspector .ui-props-body .actiongrid,.app #inspector .ui-props-body .align-grid{gap:5px}.app #inspector .ui-props-body .actiongrid .btn,.app #inspector .ui-props-body .align-grid .btn{min-width:0;white-space:normal;line-height:1.25;padding:6px;font-size:11px}.app #inspector .ui-props-body .swatches{gap:7px}',
+'.app .right>.nx-panel{flex:none}.app #nxLayerPanel{flex:1;min-height:0;overflow:auto}'
+].join('\n');document.head.append(uiPropsCss);render();
 
 nxFitAvailable();
 </script>
