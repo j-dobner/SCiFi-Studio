@@ -3041,16 +3041,27 @@ function nxBoolCombine(op,items,closeOpen=false){
  if(first.groupId&&items.every(v=>v.groupId===first.groupId&&JSON.stringify(v.groupStack||[])===JSON.stringify(first.groupStack||[]))){o.groupId=first.groupId;if(first.groupStack)o.groupStack=structuredClone(first.groupStack)}
  return o
 }
-function nxBoolean(op,closeOpen=false){
+function nxBoolean(op,closeOpen=false,keepOriginals=false){
  const a=selectedObjs();
- try{const o=nxBoolCombine(op,a,closeOpen),ids=new Set(a.map(v=>v.id));
-  transact(()=>{const idx=objects.indexOf(a[0]);objects=objects.filter(v=>!ids.has(v.id));objects.splice(idx,0,o);selectIndividual(o.id)});
-  showToast('Combined '+a.length+' shapes · editable path · Undo restores originals');return o
+ try{
+  if(keepOriginals&&objects.length>=5000)throw Error('Page object limit reached. Remove an object before keeping a new combined result.');
+  const o=nxBoolCombine(op,a,closeOpen),ids=new Set(a.map(v=>v.id));
+  transact(()=>{
+   if(keepOriginals){
+    // The result is independent of the source groups; retain their IDs, geometry, and stacking order.
+    delete o.groupId;delete o.groupStack;
+    const idx=objects.indexOf(a.at(-1));objects.splice(idx+1,0,o);
+   }else{
+    const idx=objects.indexOf(a[0]);objects=objects.filter(v=>!ids.has(v.id));objects.splice(idx,0,o);
+   }
+   selectIndividual(o.id)
+  });
+  showToast(keepOriginals?'Created a new combined path · originals retained · Undo removes result':'Combined '+a.length+' shapes · editable path · Undo restores originals');return o
  }catch(e){showToast(e.message);return null}
 }
 function nxBooleanMenu(){
  const a=selectedObjs(),checks=a.map(nxBoolCheck),needsClose=checks.some(v=>v.close);
- modal('<h2>Combine shapes</h2><p>Select 2–16 native shapes or paths. The backmost object supplies the result style. Subtract removes all front shapes from the backmost; Intersect keeps the common area; Exclude keeps regions covered an odd number of times.</p><div id="nxBoolSelection" class="nx-bool-selection"></div>'+(needsClose?'<label><input id="nxBoolCloseOpen" type="checkbox"> Close filled open paths using a straight closing edge</label><p class="hint">Only the result is closed. Original objects remain unchanged until you apply.</p>':'')+'<p id="nxBoolStatus" role="status"></p><div class="actiongrid">'+['union','subtract','intersect','exclude'].map(s=>'<button class="btn" data-bool="'+s+'">'+s[0].toUpperCase()+s.slice(1)+'</button>').join('')+'</div><p class="hint">Complete surviving Bézier segments retain their handles. Cut edges are approximated with short straight segments; exact curved intersections are not guaranteed. Labels embedded in geometric shapes are not retained. Undo restores the original artwork.</p>');
+ modal('<h2>Combine shapes</h2><p>Select 2–16 native shapes or paths. The backmost object supplies the result style. Subtract removes all front shapes from the backmost; Intersect keeps the common area; Exclude keeps regions covered an odd number of times.</p><div id="nxBoolSelection" class="nx-bool-selection"></div>'+(needsClose?'<label><input id="nxBoolCloseOpen" type="checkbox"> Close filled open paths using a straight closing edge</label><p class="hint">Only the result is closed. Original objects remain unchanged until you apply.</p>':'')+'<label style="display:block;margin:10px 0"><input id="nxBoolKeepOriginals" type="checkbox"> Keep original objects</label><p class="hint">When checked, creates a separate editable result directly above the selected objects without replacing them. Move it away or hide the originals to inspect it independently.</p><p id="nxBoolStatus" role="status"></p><div class="actiongrid">'+['union','subtract','intersect','exclude'].map(s=>'<button class="btn" data-bool="'+s+'">'+s[0].toUpperCase()+s.slice(1)+'</button>').join('')+'</div><p class="hint">Complete surviving Bézier segments retain their handles. Cut edges are approximated with short straight segments; exact curved intersections are not guaranteed. Labels embedded in geometric shapes are not retained. Undo restores the original artwork.</p>');
  const list=$('#nxBoolSelection');
  a.forEach((o,i)=>{const row=document.createElement('div');row.className='nx-bool-row';const title=document.createElement('strong');title.textContent=(i+1)+'. '+nxLayerName(o)+(i===0?' · backmost':'');const status=document.createElement('small');status.textContent=checks[i].reason;status.style.color=checks[i].ok&&!checks[i].close?'#52758b':'#9a5720';row.append(title,status);list.append(row)});
  function update(){
@@ -3059,7 +3070,7 @@ function nxBooleanMenu(){
   document.querySelectorAll('[data-bool]').forEach(b=>b.disabled=blocked||waiting)
  }
  if(needsClose)$('#nxBoolCloseOpen').onchange=update;
- document.querySelectorAll('[data-bool]').forEach(b=>b.onclick=()=>{const result=nxBoolean(b.dataset.bool,!!$('#nxBoolCloseOpen')?.checked);if(result)closeModal()});
+ document.querySelectorAll('[data-bool]').forEach(b=>b.onclick=()=>{const result=nxBoolean(b.dataset.bool,!!$('#nxBoolCloseOpen')?.checked,$('#nxBoolKeepOriginals').checked);if(result)closeModal()});
  update()
 }
 const nxBoolCss=document.createElement('style');nxBoolCss.textContent='.nx-bool-selection{max-height:210px;overflow:auto;border:1px solid #d6e1ea;border-radius:6px;padding:4px 9px;margin:10px 0}.nx-bool-row{padding:7px 0;border-bottom:1px solid #e8eef3}.nx-bool-row:last-child{border-bottom:0}.nx-bool-row strong,.nx-bool-row small{display:block;overflow-wrap:anywhere}.nx-bool-row small{font-size:11px;margin-top:3px}';document.head.append(nxBoolCss);

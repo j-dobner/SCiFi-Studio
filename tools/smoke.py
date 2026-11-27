@@ -401,6 +401,22 @@ with sync_playwright() as p:
         assert page.evaluate("nxInside({x:115,y:50},nxBoolNativeContours(objects[0],false).loops)")
         page.evaluate("undo()")
         assert page.evaluate("JSON.stringify(objects)===window.boolOriginal")
+        # Keep originals is opt-in and creates one independent, editable result.
+        page.evaluate("selection(objects.map(o=>o.id));render()")
+        page.locator("#nxBooleanBtn").click()
+        assert not page.locator("#nxBoolKeepOriginals").is_checked()
+        page.locator("#nxBoolCloseOpen").check()
+        page.locator("#nxBoolKeepOriginals").check()
+        page.locator("[data-bool=union]").click()
+        assert page.evaluate("objects.length") == 4
+        assert page.evaluate("JSON.stringify(objects.slice(0,3))===window.boolOriginal")
+        assert page.evaluate("selectedObj().id===objects[3].id && objects[3].closed && !objects[3].groupId")
+        page.evaluate("undo()")
+        assert page.evaluate("JSON.stringify(objects)===window.boolOriginal")
+        page.evaluate("selection(objects.map(o=>o.id));render()")
+        page.locator("#nxBooleanBtn").click()
+        assert not page.locator("#nxBoolKeepOriginals").is_checked()
+        page.evaluate("closeModal()")
         # Incompatible objects are named and no operation is permitted.
         page.evaluate("objects.push(txt('Label',5,5));selection(objects.map(o=>o.id));render()")
         page.locator("#nxBooleanBtn").click()
