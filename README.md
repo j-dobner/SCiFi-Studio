@@ -14,9 +14,9 @@ v22.1 public preview · 27 November 2026
 
 The preview contains vector drawing and layout tools, editable paths and shapes, text and arrows, an icon editor, synthetic plot tools, local project import/export and 471 editable scientific illustrations: 329 molecular biology, 13 human organoids, 36 expanded cell atlas, 19 early progenitors, 17 original lineage illustrations, 34 embryogenesis illustrations and all 23 Carnegie stages. Molecular variants are grouped into families by default; enable **Show individual variants** for the complete count. Other unresolved private artwork, including laboratory essentials, branded instruments and legacy drawings, is excluded.
 
-## v23.1 experimental workspace
+## v23.2 Sage review
 
-Review prototype: vertical drawing rail, selection-sensitive quick controls and collapsible inspector sections. Advanced tools remain available in the expandable toolbar. This is not a public release; visual layout and edge cases are still under review.
+Returns to the original horizontal tool placement and panel layout, retaining the line-icon treatment of the workspace prototype. Pastel sage and mint editor chrome, clearer active states, and consistent control styling do not recolor the artwork or exported page. The v23.1 structural redesign remains in Git history for comparison. This is an experimental review build.
 
 ## v23 experimental branch
 
