@@ -617,6 +617,7 @@ with sync_playwright() as p:
             objects=[txt('Recovery test',20,30,18,'#123456')];selectOnly(null);
             projectName='Recovery test project';$('#projectName').value=projectName;
             uiGuideList().splice(0);uiGuideAdd('x',10);
+            uiPanelCommit({panels:[{x:10,y:15,w:100,h:80,label:'A'}],visible:true,snap:true});
             appendPage(false);
             objects=[txt('Second page',15,15,16,'#654321')];render();
         }""")
@@ -636,6 +637,8 @@ with sync_playwright() as p:
         assert page.evaluate("pages.length") == 2
         assert page.evaluate("objects[0].text") == "Second page"
         assert page.evaluate("pages[0].guides[0].v") == 10
+        assert page.evaluate("pages[0].panelLayout.panels[0]") == {"x":10,"y":15,"w":100,"h":80,"label":"A"}
+        assert page.evaluate("!activePage().panelLayout")
         assert page.evaluate("async id => !!(await uiRecRead(id))",draft_id)
         # Deleting a checkpoint never changes document data.
         page.locator("#uiRecButton").click()

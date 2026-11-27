@@ -846,6 +846,11 @@ function scaledRectFromHandle(name,left,top,w,h,dx,dy,free){
 }
 function hitsMarquee(o,r){let b=bounds(o);return b.right>=r.left&&b.left<=r.right&&b.bottom>=r.top&&b.top<=r.bottom}
 function marqueeRect(p,q){return {left:Math.min(p.x,q.x),top:Math.min(p.y,q.y),right:Math.max(p.x,q.x),bottom:Math.max(p.y,q.y)}}
+function uiPanelClean(raw){
+ if(!raw||!Array.isArray(raw.panels))return null;
+ const panels=raw.panels.slice(0,36).filter(p=>p&&['x','y','w','h'].every(k=>typeof p[k]==='number'&&Number.isFinite(p[k]))&&p.x>=0&&p.y>=0&&p.w>=.1&&p.h>=.1&&p.x+p.w<=5000.001&&p.y+p.h<=5000.001).map(p=>({x:p.x,y:p.y,w:p.w,h:p.h,label:String(p.label??'').slice(0,12)}));
+ return panels.length?{panels,visible:raw.visible!==false,snap:raw.snap===true}:null
+}
 function snapshot(){return JSON.stringify({elements:objects,background:pageBackground,selection:[...selectedIds],panelLayout:uiPanelClean(activePage()?.panelLayout)})}
 function restoreSnapshot(serialized){let data=JSON.parse(serialized);objects=Array.isArray(data)?data:data.elements||[];pageBackground=validPageColor(Array.isArray(data)?pageBackground:data.background);activePage().background=pageBackground;if(!Array.isArray(data)&&Object.hasOwn(data,'panelLayout'))activePage().panelLayout=uiPanelClean(data.panelLayout);$('#pageColor').value=pageBackground==='transparent'?'#ffffff':pageBackground}
 function pushHistory(before){const a=JSON.parse(before),b=JSON.parse(snapshot());if(JSON.stringify(a.elements??a)===JSON.stringify(b.elements??b)&&a.background===b.background&&(!Object.hasOwn(a,'panelLayout')||JSON.stringify(a.panelLayout)===JSON.stringify(b.panelLayout)))return;undos.push(before);if(undos.length>70)undos.shift();redos=[];updateHistory()}
@@ -4542,11 +4547,6 @@ renderInspector=function(){
 const uiPreciseCss=document.createElement('style');uiPreciseCss.textContent='.ui-precise-anchor-row{display:flex;align-items:center;justify-content:space-between;margin:10px 0;gap:12px}.ui-precise-anchors{display:grid;grid-template-columns:repeat(3,25px);gap:3px}.ui-precise-anchors button{padding:0!important;width:25px;height:25px;display:grid;place-items:center}.ui-precise-anchors button span{width:5px;height:5px;background:#819caf;border-radius:50%}.ui-precise-anchors button.active span{background:#365e7a;width:8px;height:8px}';document.head.append(uiPreciseCss);
 
 /* Incremental publication layout: page-owned nonprinting guides, never rearrange artwork. */
-function uiPanelClean(raw){
- if(!raw||!Array.isArray(raw.panels))return null;
- const panels=raw.panels.slice(0,36).filter(p=>p&&['x','y','w','h'].every(k=>typeof p[k]==='number'&&Number.isFinite(p[k]))&&p.x>=0&&p.y>=0&&p.w>=.1&&p.h>=.1&&p.x+p.w<=5000.001&&p.y+p.h<=5000.001).map(p=>({x:p.x,y:p.y,w:p.w,h:p.h,label:String(p.label??'').slice(0,12)}));
- return panels.length?{panels,visible:raw.visible!==false,snap:raw.snap===true}:null
-}
 function uiPanelLetter(i){let s='';for(i++;i>0;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s}
 function uiPanelGrid(cols,rows,mx,my,gx,gy){
  if(!Number.isInteger(cols)||!Number.isInteger(rows)||cols<1||cols>6||rows<1||rows>6||![mx,my,gx,gy].every(v=>Number.isFinite(v)&&v>=0))throw Error('Choose 1–6 rows and columns, and nonnegative margins and gaps.');
