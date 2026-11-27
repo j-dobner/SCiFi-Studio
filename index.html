@@ -3598,6 +3598,7 @@ function uiPubField(id,label,value,min,max,step='any'){return '<label class="nx-
 function uiPubSelect(id,label,items,value){return '<label class="nx-field">'+svgEsc(label)+'<select id="'+id+'">'+items.map(([v,n])=>'<option value="'+svgEsc(v)+'" '+(String(v)===String(value)?'selected':'')+'>'+svgEsc(n)+'</option>').join('')+'</select></label>'}
 function uiPubWalk(items,fn,scaleX=1,scaleY=1,root=null,depth=0){if(!Array.isArray(items)||depth>8)return;for(const o of items){if(!o||o.hidden||o.type==='reference')continue;fn(o,scaleX,scaleY,root||o);if(o.type==='symbol')uiPubWalk(o.children,fn,scaleX*Math.abs(o.w/Math.max(1,o.sourceW)),scaleY*Math.abs(o.h/Math.max(1,o.sourceH)),root||o,depth+1)}}
 function uiPubEditable(o){return o&&!o.locked&&!o.hidden&&o.type!=='reference'}
+function uiPubHasStroke(o){return ['shape','rect','path','arrow'].includes(o.type)&&(o.type==='path'||o.type==='arrow'?o.color!=='none':o.strokeColor!=='none')&&(o.strokeWidth??2)>0}
 function uiPubFileName(suffix){return projectFileName(projectName).replace(/\.json$/i,'')+suffix}
 function uiPubSafe(fn){try{fn()}catch(e){showToast(e.message||'Unable to apply this operation')}}
 /* 23.1: local recovery, non-destructive single-object format painter. */
@@ -3647,7 +3648,7 @@ function uiPubApplyStyle(){if(!uiPubPaint)throw Error('Copy a style first');cons
 /* 23.2: figure formatting, physical-unit transform. */
 function uiPubColorKeys(o){if(o.type==='text')return ['color','textBoxBgColor','textBoxBorderColor'];if(o.type==='path')return ['color','strokeColor','fillColor'];if(o.type==='shape'||o.type==='rect')return ['color','fill','strokeColor','labelColor'];if(o.type==='arrow')return ['color'];const a=byId[o.type];return a&&!a.uploaded||a?.recolorable?['color']:[]}
 function uiPubFormatObjects(items,settings){
- let changed=0;uiPubWalk(items,o=>{if(!uiPubEditable(o))return;let edited=false;
+ let changed=0;uiPubWalk(items,(o,sx,sy,root)=>{if(!uiPubEditable(o)||!uiPubEditable(root))return;let edited=false;
  const set=(obj,k,v)=>{if(obj[k]!==v){obj[k]=v;edited=true}};
  if(settings.from&&settings.to){const match=v=>typeof v==='string'&&v.toLowerCase()===settings.from.toLowerCase();for(const k of uiPubColorKeys(o))if(match(o[k]))set(o,k,settings.to);
  if(o.fillGradient?.stops)for(const stop of o.fillGradient.stops)if(match(stop.color))set(stop,'color',settings.to);
@@ -3656,7 +3657,7 @@ function uiPubFormatObjects(items,settings){
   if(settings.font)set(o,'fontFamily',settings.font);if(settings.fontPx)set(o,'fontSize',settings.fontPx);
   for(const run of o.richRuns||[]){if(!run.style)continue;if(settings.font&&'fontFamily' in run.style){delete run.style.fontFamily;edited=true}if(settings.fontPx&&'fontSize' in run.style){delete run.style.fontSize;edited=true}}if(edited)scifiUpdateTextGeometry(o)
  }
- if(settings.strokePx!=null&&['path','shape','rect','arrow'].includes(o.type)&&o.strokeColor!=='none'&&o.color!=='none'&&(o.strokeWidth??2)>0)set(o,'strokeWidth',settings.strokePx);
+ if(settings.strokePx!=null&&uiPubHasStroke(o))set(o,'strokeWidth',settings.strokePx);
  if(edited)changed++;
  });return changed
 }
@@ -3704,8 +3705,8 @@ function uiPubPanelDialog(){
 }
 /* 23.4: lossless RGB raster TIFF and PDF with exact page size. */
 function uiPubRGBSize(dpi){const s=pngExportSize(dpi);if(s.width*s.height>20000000)throw Error('TIFF/PDF limit is 20 megapixels per export; lower DPI or use SVG');return s}
-async function uiPubRaster(dpi){const s=uiPubRGBSize(dpi),svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 '+canvasWidth+' '+canvasHeight+'" width="'+canvasWidth+'" height="'+canvasHeight+'">'+svgDocument(true)+'</svg>',url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
- try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=s.width;c.height=s.height;const ctx=c.getContext('2d',{alpha:false,willReadFrequently:true});if(!ctx)throw Error('Canvas allocation failed');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);const data=ctx.getImageData(0,0,c.width,c.height).data,rgb=new Uint8Array(c.width*c.height*3);for(let i=0,j=0;i<data.length;i+=4){rgb[j++]=data[i];rgb[j++]=data[i+1];rgb[j++]=data[i+2]}c.width=c.height=1;return {...s,rgb,wPt:canvasWidth*72/96,hPt:canvasHeight*72/96}}
+async function uiPubRaster(dpi){const s=uiPubRGBSize(dpi),wPt=canvasWidth*72/96,hPt=canvasHeight*72/96,svg='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 '+canvasWidth+' '+canvasHeight+'" width="'+canvasWidth+'" height="'+canvasHeight+'">'+svgDocument(true)+'</svg>',url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+ try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=s.width;c.height=s.height;const ctx=c.getContext('2d',{alpha:false,willReadFrequently:true});if(!ctx)throw Error('Canvas allocation failed');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);const data=ctx.getImageData(0,0,c.width,c.height).data,rgb=new Uint8Array(c.width*c.height*3);for(let i=0,j=0;i<data.length;i+=4){rgb[j++]=data[i];rgb[j++]=data[i+1];rgb[j++]=data[i+2]}c.width=c.height=1;return {...s,rgb,wPt,hPt}}
  finally{URL.revokeObjectURL(url)}
 }
 function uiPubTiff(s){
@@ -3755,7 +3756,7 @@ function uiPubImageDialog(){
  modal('<h2>Image annotation</h2><p>'+svgEsc(a.name)+' · original '+a.width+' × '+a.height+' pixels. Source pixels are kept unchanged. Adjustments apply uniformly to the entire image view and are recorded in the project.</p><div class="nx-grid">'+uiPubField('uiImgX','Crop left (px)',v.x,0,a.width-1,1)+uiPubField('uiImgY','Crop top (px)',v.y,0,a.height-1,1)+uiPubField('uiImgW','Crop width (px)',v.w,1,a.width,1)+uiPubField('uiImgH','Crop height (px)',v.h,1,a.height,1)+uiPubField('uiImgB','Brightness offset',v.brightness,-.5,.5,.05)+uiPubField('uiImgC','Contrast multiplier',v.contrast,.5,2,.05)+uiPubField('uiImgCal','Calibration (µm / source pixel)',v.umPerPixel,0,100000,.001)+uiPubField('uiImgBar','Scale-bar length (µm; 0 = off)',v.barUm,0,10000000,.1)+uiPubSelect('uiImgBarColor','Scale-bar color',[['white','White'],['black','Black']],v.barColor)+'</div><div class="nx-preview"><svg id="uiImgPreview" viewBox="0 0 280 180"></svg></div><p id="uiImgWarning" class="hint"></p><div class="actiongrid"><button class="btn primary" id="uiImgApply">Apply image view</button><button class="btn" id="uiImgInset">Create magnified inset + ROI</button><button class="btn" id="uiImgReset">Reset image view</button></div><p class="hint">Enter calibration from the original acquisition metadata; SCiFi cannot infer physical specimen dimensions. Do not selectively adjust images or conceal data. Keep original files and document processing according to journal policy.</p>');
  function read(){const p={x:uiPubNum('uiImgX'),y:uiPubNum('uiImgY'),w:uiPubNum('uiImgW'),h:uiPubNum('uiImgH'),brightness:uiPubNum('uiImgB'),contrast:uiPubNum('uiImgC'),umPerPixel:uiPubNum('uiImgCal'),barUm:uiPubNum('uiImgBar'),barColor:$('#uiImgBarColor').value};if(![p.x,p.y,p.w,p.h,p.brightness,p.contrast,p.umPerPixel,p.barUm].every(Number.isFinite)||p.x<0||p.y<0||p.w<1||p.h<1||p.x+p.w>a.width+.00001||p.y+p.h>a.height+.00001)throw Error('Crop must be inside the original image');if(p.brightness<-.5||p.brightness>.5||p.contrast<.5||p.contrast>2||p.umPerPixel<0||p.barUm<0)throw Error('Choose valid image adjustment values');if(p.barUm>0&&(!p.umPerPixel||p.barUm/p.umPerPixel>p.w*.85))throw Error('Scale bar needs a positive calibration and must fit inside the cropped image');return p}
  function preview(){try{const p=read(),w=Math.min(260,160*p.w/p.h),h=w*p.h/p.w;$('#uiImgPreview').innerHTML='<g transform="translate('+((280-w)/2)+' '+((180-h)/2)+')">'+uiPubRasterMarkup({...o,w,h,imageView:p},a)+'</g>';$('#uiImgWarning').textContent='';$('#uiImgApply').disabled=false;$('#uiImgInset').disabled=false}catch(e){$('#uiImgWarning').textContent=e.message;$('#uiImgApply').disabled=true;$('#uiImgInset').disabled=true}}
- $('#uiImgPreview').closest('.modal')?.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',preview));for(const id of ['uiImgX','uiImgY','uiImgW','uiImgH','uiImgB','uiImgC','uiImgCal','uiImgBar','uiImgBarColor'])$('#'+id).addEventListener('input',preview);preview();
+ for(const id of ['uiImgX','uiImgY','uiImgW','uiImgH','uiImgB','uiImgC','uiImgCal','uiImgBar','uiImgBarColor'])$('#'+id).addEventListener('input',preview);preview();
  $('#uiImgApply').onclick=()=>uiPubSafe(()=>{const p=read();closeModal();transact(()=>uiPubImageApply(o,a,p))});
  $('#uiImgReset').onclick=()=>{closeModal();transact(()=>{delete o.imageView;o.h=o.w*a.height/a.width})};
  $('#uiImgInset').onclick=()=>uiPubSafe(()=>{const p=read();if(o.rotation%360||o.flipX||o.flipY)throw Error('Reset image rotation and flips before creating an ROI inset');if(p.x<original.x||p.y<original.y||p.x+p.w>original.x+original.w||p.y+p.h>original.y+original.h)throw Error('Inset crop must be inside the currently visible image');if(objects.length>4997)throw Error('Page capacity reached');
@@ -3770,7 +3771,7 @@ function uiPubPreflight(config){
   const labelText=labels.map(o=>o.text);if(new Set(labelText).size!==labelText.length)add(p,labels[0],'Duplicate generated panel labels');
   uiPubWalk(items,(o,sx,sy,root)=>{
    if(o.type==='text'){const sizes=[o.fontSize||20,...(o.richRuns||[]).map(r=>r.style?.fontSize).filter(Number.isFinite)],pt=Math.min(...sizes)*sy*72/96;if(pt<minFont)add(p,root,'Text "'+String(o.text||'').slice(0,32)+'" may be '+pt.toFixed(1)+' pt (minimum '+minFont+')')}
-   if(['shape','rect','path','arrow'].includes(o.type)&&o.strokeColor!=='none'&&o.color!=='none'&&(o.strokeWidth??2)>0){const pt=(o.strokeWidth??2)*Math.min(sx,sy)*72/96;if(pt<minStroke)add(p,root,'Thin outline / line: '+pt.toFixed(2)+' pt')}
+   if(uiPubHasStroke(o)){const pt=(o.strokeWidth??2)*Math.min(sx,sy)*72/96;if(pt<minStroke)add(p,root,'Thin outline / line: '+pt.toFixed(2)+' pt')}
    const a=uiPubRasterAsset(o);if(a){const v=uiPubImageView(o,a),dpi=Math.min(v.w*96/Math.max(.01,o.w*sx),v.h*96/Math.max(.01,o.h*sy));if(dpi<limit)add(p,root,'Raster image "'+a.name+'" approximately '+Math.floor(dpi)+' effective DPI (target '+limit+')');if(v.barUm>0&&(!v.umPerPixel||v.barUm/v.umPerPixel>v.w*.85))add(p,root,'Scale bar does not fit or calibration is missing')}
    const asset=byId[o.sourceAssetId]||byId[o.type];if(asset?.uploaded&&(!asset.license||asset.license==='unspecified'||asset.license==='mixed'))add(p,root,'Imported illustration/image: verify rights or source provenance ('+asset.name+')');
    if(o.type==='plot')add(p,root,'Schematic plot uses synthetic example values; verify that it is not presented as experimental data')
