@@ -59,6 +59,26 @@ with sync_playwright() as p:
             page.evaluate("saveProject()")
         assert download.value.suggested_filename == "Fallback figure.json"
         assert page.locator("#projectName").input_value() == "Fallback figure"
+        # UI review 1: original toolbar placement, consistent icons, real tooltips.
+        assert page.locator(".toolbar #selectTool").count() == 1
+        assert page.locator(".toolbar #nxStudioBtn svg").count() == 1
+        assert "Ctrl/Cmd+G" in page.locator("#groupBtn").get_attribute("title")
+        assert "Ctrl/Cmd+Shift+G" in page.locator("#ungroupBtn").get_attribute("title")
+        page.locator("#textTool").click()
+        assert page.evaluate("activeTool") == "text"
+        page.locator("#selectTool").click()
+        page.locator("#shapePaletteBtn").click()
+        assert page.locator("#shapePalette").is_visible()
+        page.locator("#shapePalette [data-shape-choice]").first.click()
+        assert page.evaluate("activeTool") == "box"
+        assert page.locator("#shapePaletteBtn svg").count() == 1
+        page.locator("#scifiLinePaletteBtn").click()
+        assert page.locator("#shapePalette").is_visible()
+        page.locator("#scifiLinePaletteBtn").click()
+        assert not page.locator("#shapePalette").is_visible()
+        page.locator("#selectTool").click()
+        page.evaluate("nxSnapBadge()")
+        assert page.locator("#nxSnapBtn svg").count() == 1
         # v23: preserve rich styles while overriding text color via the inspector.
         page.evaluate("""() => {
             const o=txt('Mixed',10,10,20,'#000000',500);

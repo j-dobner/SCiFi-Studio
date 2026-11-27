@@ -78,7 +78,7 @@ No historical artwork collections are included in this preview.
 <html lang="en">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SCiFi Studio v23 development preview</title>
+<title>SCiFi Studio v23 — Toolbar review 1</title>
 <style>
 :root{--ink:#1b2841;--muted:#7c879b;--stroke:#e5eaf1;--blue:#4267e8;--blue2:#edf2ff;--bg:#f3f5f9;--panel:#fff;--shadow:0 14px 40px rgba(30,44,77,.08)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.36;cursor:default}.app{height:100vh;min-height:630px;display:flex;flex-direction:column;overflow:hidden}
@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23 · UI 1</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -1306,9 +1306,9 @@ function toggleShapePalette(kind='geometry'){
  el.innerHTML=`<h3>${kind==='geometry'?'Geometric shapes':'Lines, arrows &amp; paths'}</h3><div class="shape-choice-grid">${options.map(([id,label,path])=>`<button class="shape-choice ${id===drawKind?'active':''}" data-shape-choice="${id}" title="Draw ${label}"><svg viewBox="0 0 64 50" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg><span>${label}</span></button>`).join('')}</div>`;
  const b=button.getBoundingClientRect();el.classList.remove('hidden');el.style.left=Math.max(8,Math.min(b.left,window.innerWidth-310))+'px';el.style.top=Math.max(12,Math.min(window.innerHeight-470,b.bottom+7))+'px';
  button.setAttribute('aria-expanded','true');
- el.querySelectorAll('[data-shape-choice]').forEach(btn=>btn.onclick=()=>{drawKind=btn.dataset.shapeChoice;scifiLastShape[kind]=drawKind;setTool(drawKind==='polyPen'?'polyPen':drawKind==='pen'?'pen':drawKind==='connector'?'connector':drawKind==='multiArrow'?'multiArrow':['line','arrow'].includes(drawKind)?'arrow':'box');button.textContent=(kind==='geometry'?'▢ ':'✒ ')+(shapeOptions.find(o=>o[0]===drawKind)?.[1]||drawKind)+' ▾';el.classList.add('hidden');$('#shapePaletteBtn').setAttribute('aria-expanded','false');scifiLinePaletteButton.setAttribute('aria-expanded','false');stage.focus({preventScroll:true})})
+ el.querySelectorAll('[data-shape-choice]').forEach(btn=>btn.onclick=()=>{drawKind=btn.dataset.shapeChoice;scifiLastShape[kind]=drawKind;setTool(drawKind==='polyPen'?'polyPen':drawKind==='pen'?'pen':drawKind==='connector'?'connector':drawKind==='multiArrow'?'multiArrow':['line','arrow'].includes(drawKind)?'arrow':'box');uiReviewToolLabel(button,kind==='geometry'?'shape':'line',(shapeOptions.find(o=>o[0]===drawKind)?.[1]||drawKind)+' ▾');el.classList.add('hidden');$('#shapePaletteBtn').setAttribute('aria-expanded','false');scifiLinePaletteButton.setAttribute('aria-expanded','false');stage.focus({preventScroll:true})})
 }
-document.addEventListener('pointerdown',e=>{if(!$('#shapePalette').classList.contains('hidden')&&!$('#shapePalette').contains(e.target)&&!$('#shapePaletteBtn').contains(e.target))$('#shapePalette').classList.add('hidden')});
+document.addEventListener('pointerdown',e=>{if(!$('#shapePalette').classList.contains('hidden')&&!$('#shapePalette').contains(e.target)&&!$('#shapePaletteBtn').contains(e.target)&&!scifiLinePaletteButton.contains(e.target))$('#shapePalette').classList.add('hidden')});
 // Hold the middle mouse button to pan; preserve left-button drawing and Ctrl/Cmd-wheel zoom.
 canvasShell.addEventListener('pointerdown',e=>{if(e.button!==1)return;e.preventDefault();closeContextMenu();panState={id:e.pointerId,x:e.clientX,y:e.clientY,left:canvasShell.scrollLeft,top:canvasShell.scrollTop};canvasShell.classList.add('pan-active');canvasShell.setPointerCapture?.(e.pointerId)},true);
 canvasShell.addEventListener('pointermove',e=>{if(!panState)return;canvasShell.scrollLeft=panState.left-(e.clientX-panState.x);canvasShell.scrollTop=panState.top-(e.clientY-panState.y);e.preventDefault()},true);
@@ -3061,7 +3061,7 @@ function nxUpdatePanels(){for(const [id,label] of nxPanels){const collapsed=!!nx
 function nxTogglePanel(id){nxPanelState[id]=!nxPanelState[id];nxUpdatePanels()}
 for(const [id,label] of nxPanels){if(id==='pages'){const heading=$('.page-dock-heading');nxPanelButtons[id]=nxButton('nxToggle-'+id,label,()=>nxTogglePanel(id),heading);nxPanelButtons[id].classList.add('nx-page-toggle');heading.append(nxPanelButtons[id]);continue}const panel=$('.'+id),rail=document.createElement('div'),lab=document.createElement('span');rail.className='nx-panel-rail';lab.className='nx-rail-label';lab.textContent=label;rail.append(lab);nxPanelButtons[id]=nxButton('nxToggle-'+id,label,()=>nxTogglePanel(id),rail);if(id==='right')rail.prepend(nxPanelButtons[id]);panel.prepend(rail)}
 let nxFocusRestore=null;nxButton('nxFocusCanvas','Focus canvas',()=>{const all=nxPanels.every(([id])=>nxPanelState[id]);if(all){for(const [id] of nxPanels)nxPanelState[id]=nxFocusRestore?.[id]||false;nxFocusRestore=null}else{nxFocusRestore={...nxPanelState};for(const [id] of nxPanels)nxPanelState[id]=true}nxUpdatePanels();nxFitAvailable()},nxWorkspace).title='Collapse all panels or restore them';nxButton('nxFitCanvas','Fit',()=>nxFitAvailable(),nxWorkspace).title='Fit page to available canvas';if(innerWidth<=600){for(const id of ['left','right'])if(typeof nxPanelState[id]!=='boolean')nxPanelState[id]=true}nxUpdatePanels();
-const snapButton=$('#nxSnapBtn');function nxSnapBadge(){snapButton.textContent='Snap: '+(scifiNext.snap&&scifiNext.gridSnap?'Both':scifiNext.snap?'Smart':scifiNext.gridSnap?'Grid':'Off')+' ▾';snapButton.classList.toggle('active',scifiNext.snap||scifiNext.gridSnap);snapButton.title='Snap to nearby objects or grid. Click to configure.'}const nxSnapOpen=nxSnapSettings;nxSnapSettings=function(){nxSnapOpen();const save=$('#nxSnapSave'),fn=save.onclick;save.onclick=()=>{fn();nxSnapBadge()}};snapButton.onclick=()=>nxSnapSettings();nxSnapBadge();
+const snapButton=$('#nxSnapBtn');function nxSnapBadge(){const label='Snap: '+(scifiNext.snap&&scifiNext.gridSnap?'Both':scifiNext.snap?'Smart':scifiNext.gridSnap?'Grid':'Off')+' ▾';snapButton.textContent=label;if(snapButton.classList.contains('ui-review-icon'))uiReviewToolLabel(snapButton,'snap',label);snapButton.classList.toggle('active',scifiNext.snap||scifiNext.gridSnap);snapButton.title='Snap to nearby objects or grid. Click to configure.'}const nxSnapOpen=nxSnapSettings;nxSnapSettings=function(){nxSnapOpen();const save=$('#nxSnapSave'),fn=save.onclick;save.onclick=()=>{fn();nxSnapBadge()}};snapButton.onclick=()=>nxSnapSettings();nxSnapBadge();
 const nxHelpContent=`<h2>Advanced workspace guide</h2><h3>Snap</h3><p>Smart snap aligns object edges and centers, page margins and equal gaps as you move an object. Grid snap aligns to a configurable pitch. Magenta guides indicate the alignment. Hold Ctrl/Cmd while dragging to bypass new snapping. The toolbar indicates Smart, Grid, Both or Off.</p><h3>Layers</h3><p>Open Properties → Layers. Top rows are in front; bottom rows are behind. Drag a grip or row above/below a target; a colored line indicates the drop position. Groups move as a unit. Locked/reference layers cannot be moved. Use To front / To back as an alternative.</p><h3>Nested compound icons</h3><p>A compound icon can contain other editable icons. Double-click the outer icon, then double-click an inner icon. Save or cancel the inner editing session to return to its parent, then save or cancel again to return to the figure. Saving changes the selected instance, not the original library asset.</p><h3>Selective SVG rendering</h3><p>During common drag, resize and node edits, unchanged artwork stays in the browser DOM. This reduces redraw work without changing the saved vectors or export.</p><h3>Cached page thumbnails and bounded undo</h3><p>Inactive page previews are reused until page content changes. Undo history is limited to 70 entries and approximately 24 Mi characters per active page, retaining at least one entry. Older history is discarded to control memory. Undo/redo keeps surviving selected objects selected and restores saved selection when necessary.</p><h3>Extended project serialization</h3><p>The saved JSON records new native data such as nested icons, reference images, gradients, compound paths, layer settings, molecular graphs and biological recipes. The internal project format is version 10, independent of the visible app version. Use copies when testing; older builds may drop new fields.</p><h3>Workspace panels</h3><p>Use the labeled Collapse / Expand buttons on Library, Properties, Pages and Edit tools. Focus canvas hides all four; Restore panels restores the previous layout. Fit adjusts zoom to the available space. This does not change the page dimensions or export.</p>`;nxButton('nxFeedbackHelp','Help',()=>modal(nxHelpContent),nxWorkspace);
 function nxScriptHelp(){const sample=`SCIFI_API.addShape({x:40,y:40,w:50,h:30,kind:"ellipse",color:"#c8e1d8"})\nSCIFI_API.repeat({count:5,dx:65,dy:0})\nSCIFI_API.addText({text:"Editable cells",x:40,y:100,size:20})`;const bio=`SCIFI_API.biological({kind:"plate",count:12})`;const chem=`SCIFI_API.molecule("CC(=O)O")`;modal(`<h2>SCiFi scripting</h2><p>Scripts automate drawing by invoking native SCiFi commands. All generated shapes stay editable. No programming is required for ordinary use.</p><div class="nx-help-box"><b>Quick start:</b> Choose an example, then press Run commands. Each drawing command can be undone. Existing artwork is not cleared. Alternatively, open the browser developer console (F12 → Console) and use the full JavaScript API.</div><div class="nx-checks"><button class="btn small" id="nxExampleCells">Cells + repeat</button><button class="btn small" id="nxExamplePlate">12-well plate</button><button class="btn small" id="nxExampleMol">Molecule</button></div><textarea class="nx-script-code" id="nxScriptInput" spellcheck="false" aria-label="SCiFi commands"></textarea><p>One API command per line, using JSON arguments with double quotes. This panel runs only approved API calls, not arbitrary JavaScript. For variables, loops or general JavaScript use the developer console.</p><button class="btn primary" id="nxScriptRun">Run commands</button> <button class="btn" id="nxScriptCopy">Copy commands</button><pre class="nx-script-status" id="nxScriptStatus" aria-live="polite">Ready.</pre><details><summary>API reference</summary><pre style="white-space:pre-wrap">SCIFI_API.version\nSCIFI_API.project()\nSCIFI_API.addShape({"x":30,"y":30,"w":80,"h":50,"kind":"ellipse","color":"#c8e1d8"})\nSCIFI_API.addPath({"nodes":[{"x":0,"y":0},{"x":60,"y":40}],"x":100,"y":100})\nSCIFI_API.addText({"text":"Example","x":40,"y":100})\nSCIFI_API.biological({"kind":"bilayer","count":20})\nSCIFI_API.molecule("CCO")\nSCIFI_API.select(["object-id"])\nSCIFI_API.repeat({"count":5,"dx":50,"dy":0})\nSCIFI_API.svg()</pre></details>`);const input=$('#nxScriptInput');input.value=sample.replace(/([{,])([a-zA-Z]+):/g,'$1"$2":');for(const [id,val] of [['nxExampleCells',sample],['nxExamplePlate',bio],['nxExampleMol',chem]])$('#'+id).onclick=()=>input.value=val.replace(/([{,])([a-zA-Z]+):/g,'$1"$2":');$('#nxScriptCopy').onclick=async()=>{try{await navigator.clipboard.writeText(input.value);$('#nxScriptStatus').textContent='Copied.'}catch{input.select();$('#nxScriptStatus').textContent='Text selected. Press Ctrl/Cmd+C to copy.'}};$('#nxScriptRun').onclick=()=>{const out=$('#nxScriptStatus');try{const calls=input.value.split('\n').map(s=>s.trim()).filter(s=>s&&!s.startsWith('//')).map((s,i)=>{const m=s.match(/^SCIFI_API\.(addShape|addPath|addText|biological|molecule|select|repeat|project|svg)\((.*)\);?$/);if(!m)throw Error('Line '+(i+1)+': unsupported command. Use the example format.');return [m[1],m[2].trim()?JSON.parse(m[2]):undefined]});const log=[];for(const [name,arg] of calls){const v=SCIFI_API[name](arg);log.push(name+': '+(typeof v==='string'?v.slice(0,1500):JSON.stringify(v)?.slice(0,1500)||'OK'))}out.textContent=log.join('\n')||'No commands.'}catch(e){out.textContent='Error: '+e.message+'\nEarlier successful commands, if any, remain undoable.'}}}
 render();
@@ -3098,5 +3098,68 @@ const nx207HelpBtn=$('#nxHelpBtn');if(nx207HelpBtn){const old=nx207HelpBtn.oncli
 const nx207Inspector=renderInspector;renderInspector=function(){nx207Inspector();const o=selectedObj(),recipe=!o?.bioParams&&nx207SourceRecipe(o);if(!recipe)return;const sec=document.createElement('div');sec.className='section';const btn=document.createElement('button');btn.className='btn small';btn.textContent='Configure native icon';btn.title='Adjust the internal cell or well count using the original library style';btn.onclick=()=>nxParametric(o);sec.append(btn);$('#inspector').append(sec)};
 for(const [id] of nxPanels)nxPanelState[id]=false;nxUpdatePanels();
 nx207Paste=nx207Measure();nx207StageSize();render();nxFitAvailable();
+
+/* UI review 1: retain the v23 layout, theme and original controls. */
+const uiReviewPaths={
+ select:'<path d="M5 3l14 11-7 1-3 6z"/>',
+ text:'<path d="M4 5h16M12 5v15M8 20h8"/>',
+ shape:'<rect x="4" y="5" width="12" height="12" rx="1"/><circle cx="17" cy="16" r="4"/>',
+ line:'<path d="M4 20L20 4M13 4h7v7"/>',
+ plot:'<path d="M4 4v16h16M8 16v-5M12 16V7M16 16v-8"/>',
+ group:'<rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/><rect x="6" y="6" width="5" height="5"/><rect x="13" y="13" width="5" height="5"/>',
+ ungroup:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M14 3h7v7M3 14v7h7" stroke-dasharray="2 3"/>',
+ repeat:'<path d="M4 8h14l-3-3M20 16H6l3 3M20 8v3M4 16v-3"/>',
+ snap:'<path d="M5 4v10a7 7 0 0014 0V4h-4v10a3 3 0 01-6 0V4zM5 8h4M15 8h4"/>',
+ image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="M4 18l6-6 4 4 3-3 4 5"/>',
+ combine:'<rect x="4" y="4" width="11" height="11" rx="1"/><rect x="9" y="9" width="11" height="11" rx="1"/>',
+ fill:'<path d="M5 12l7-7 7 7-7 7zM5 12h14M19 16l2 3-2 2-2-2z"/>',
+ bio:'<path d="M6 3c0 12 12 6 12 18M18 3C18 15 6 9 6 21M8 7h8M8 17h8"/>'
+};
+function uiReviewToolLabel(button,icon,label){
+ button.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+uiReviewPaths[icon]+'</svg><span>'+svgEsc(label)+'</span>';
+}
+const uiReviewTools=[
+ ['selectTool','select','Select','Select, move and resize objects. Shift-click to select multiple. Esc returns to Select.'],
+ ['textTool','text','Text','Insert an editable text label. Double-click existing text to open rich text editing.'],
+ ['shapePaletteBtn','shape','Geometric shapes ▾','Choose a geometric shape, then drag on the canvas to draw.'],
+ ['scifiLinePaletteBtn','line','Lines & connectors ▾','Choose lines, arrows, branches or Pen. Pen: Enter finishes, Esc cancels.'],
+ ['plotBtn','plot','Plot','Create an editable scientific schematic plot.'],
+ ['groupBtn','group','Group','Group selected objects. Ctrl/Cmd+G.'],
+ ['ungroupBtn','ungroup','Ungroup','Ungroup selected objects. Ctrl/Cmd+Shift+G.'],
+ ['nxRepeatBtn','repeat','Repeat ▾','Repeat selected artwork in a line, grid, radial pattern or along a path.'],
+ ['nxSnapBtn','snap',$('#nxSnapBtn').textContent,'Configure smart or grid snapping. Hold Ctrl/Cmd while dragging to bypass snapping.'],
+ ['nxRefBtn','image','Reference…','Add or manage a locked reference image, excluded from exports.'],
+ ['nxBooleanBtn','combine','Combine ▾','Combine or subtract compatible vector shapes and paths.'],
+ ['nxGradientBtn','fill','Fill…','Configure fill and gradient settings.'],
+ ['nxStudioBtn','bio','Studios ▾','Open the biological, molecular and scripting studios.']
+];
+for(const [id,icon,label,description] of uiReviewTools){const b=$('#'+id);if(!b)continue;b.classList.add('ui-review-icon');uiReviewToolLabel(b,icon,label);b.title=description}
+const uiReviewTitles={
+ selectionMore:'Select matching objects, all objects, or invert the selection. Ctrl/Cmd+A selects all.',
+ alignPicker:'Align or distribute selected objects relative to one another or the page.',
+ scifiRepeatMode:'Choose whether a drawing tool remains active after drawing or returns to Select.',
+ canvasSizeBtn:'Set canvas dimensions in px, mm, cm or inches, or choose a DIN page format.',
+ zoomOut:'Zoom out. Ctrl/Cmd + mouse wheel over the canvas also zooms.',
+ zoomIn:'Zoom in. Ctrl/Cmd + mouse wheel over the canvas also zooms.',
+ gridBtn:'Show or hide the canvas grid.',
+ transparentBgBtn:'Toggle a transparent page background for export.',
+ undoBtn:'Undo the last change. Ctrl/Cmd+Z.',
+ redoBtn:'Redo the last undone change. Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z.',
+ saveBtn:'Save an editable project. Ctrl/Cmd+S.',
+ exportBtn:'Export SVG, PNG with DPI settings, or an editable project.',
+ nxFitCanvas:'Fit the entire page to the available canvas area.',
+ nxFocusCanvas:'Collapse all workspace panels, or restore their previous state.'
+};
+for(const [id,description] of Object.entries(uiReviewTitles)){const b=$('#'+id);if(b)b.title=description}
+const uiReviewStyle=document.createElement('style');uiReviewStyle.id='uiReviewToolbar';uiReviewStyle.textContent=
+ '.app .toolbar .tool-label{display:inline-block;font-size:10px;font-weight:750;letter-spacing:.045em;color:#526b80;margin-right:3px;white-space:nowrap}'+
+ '.app .toolbar .ui-review-icon{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:32px;padding:5px 8px;line-height:1.2;font-size:11.5px;border-color:#d6e1ea}'+
+ '.app .toolbar .ui-review-icon svg{width:16px;height:16px;flex:none}.app .toolbar .ui-review-icon span{white-space:nowrap}'+
+ '.app .toolbar .ui-review-icon.active{background:#e8f1f8;border-color:#90b3ca;color:#24566b;box-shadow:inset 0 0 0 1px #90b3ca33}'+
+ '.app .toolbar .toolgroup+.toolgroup{border-left:1px solid #dce5eb;padding-left:7px}.app .toolbar .mini-select{min-height:32px}'+
+ '@media(max-width:850px){.app .toolbar .tool-label{display:none}.app .toolbar .ui-review-icon{padding:5px 6px;font-size:11px}.app .toolbar .toolgroup+.toolgroup{padding-left:0;border-left:0}}';
+document.head.append(uiReviewStyle);
+
+nxFitAvailable();
 </script>
 </body></html>
