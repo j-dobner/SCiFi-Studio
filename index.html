@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v23.8 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v24.1 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -4741,6 +4741,133 @@ function uiPanelDialog(){
 const uiPanelButton=nxButton('uiPanelBuilderBtn','Panel layout…',uiPanelDialog,$('#canvasSizeBtn').parentElement);
 uiPanelButton.title='Plan a publication figure using nonprinting panel guides';
 const uiPanelCss=document.createElement('style');uiPanelCss.textContent='.ui-panel-row{padding:8px 0;border-bottom:1px solid #d6e1ea}.ui-panel-row-head{display:flex;gap:8px;align-items:center;margin-bottom:6px}.ui-panel-row-head input{min-width:0;width:85px}.ui-panel-row .nx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}';document.head.append(uiPanelCss);
+
+/* v24.1 — adaptive touch workspace, shared native editing engine. */
+const uiMobileQuery=matchMedia('(max-width:600px), (max-width:1100px) and (pointer:coarse)');
+const uiMobileOrientation=matchMedia('(orientation:landscape)');
+let uiMobileActive=false,uiMobilePanel='',uiMobilePan=false,uiMobileEditPointer=null,uiMobileGesture=null;
+const uiMobileFingers=new Map();
+const uiMobileCSS=document.createElement('style');uiMobileCSS.id='uiMobileStyles';uiMobileCSS.textContent=
+'.ui-mobile-nav,.ui-mobile-quick,.ui-mobile-backdrop,.ui-mobile-close{display:none!important}'+
+'.app.ui-mobile{height:100vh;height:100dvh;min-height:0!important;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0px)}'+
+'.app.ui-mobile .top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;padding:5px 8px;gap:4px 8px;flex:none}'+
+'.app.ui-mobile .brand{min-width:0;gap:5px}.app.ui-mobile .brandmark{width:28px;height:28px;flex:none}.app.ui-mobile .brandname{font-size:15px;white-space:nowrap}.app.ui-mobile .brandsub,.app.ui-mobile .top .statuspill,.app.ui-mobile .top .divider-v{display:none!important}'+
+'.app.ui-mobile .top-actions{display:flex!important;min-width:0;justify-content:flex-end}.app.ui-mobile .projectname{width:100%;max-width:240px;min-width:0;font-size:16px;padding:5px 7px}'+
+'.app.ui-mobile .top-right{grid-column:1/-1;min-width:0;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;padding:0 0 2px;gap:5px}.app.ui-mobile .top-right .btn{flex:none;min-height:44px;padding:7px 10px;font-size:12px}.app.ui-mobile .top-right .optional{display:inline-flex!important}.app.ui-mobile .top-right #undoBtn,.app.ui-mobile .top-right #redoBtn{display:none!important}.app.ui-mobile #saveBtn,.app.ui-mobile #exportBtn{order:-2}.app.ui-mobile #galleryBtn{order:-1;font-size:12px!important}'+
+'.app.ui-mobile .body{position:relative;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;overflow:hidden}'+
+'.app.ui-mobile .body>.center{grid-column:1!important;grid-row:1!important;position:static;overflow:hidden}.app.ui-mobile .ui-resize-handle,.app.ui-mobile .nx-edit-rail,.app.ui-mobile .footerbar{display:none!important}'+
+'.app.ui-mobile .body>.left,.app.ui-mobile .body>.right,.app.ui-mobile .toolbar,.app.ui-mobile .page-dock{display:none!important}'+
+'.app.ui-mobile .ui-mobile-backdrop{position:absolute;inset:0;background:#142b4b38;z-index:10;touch-action:manipulation;border:0;border-radius:0;padding:0}.app.ui-mobile.ui-mobile-open .ui-mobile-backdrop{display:block!important}'+
+'.app.ui-mobile.ui-mobile-library .body>.left,.app.ui-mobile.ui-mobile-properties .body>.right,.app.ui-mobile.ui-mobile-tools .toolbar,.app.ui-mobile.ui-mobile-pages .page-dock{display:flex!important;position:absolute!important;inset:auto 0 0 0!important;flex-direction:column;justify-content:flex-start;align-items:stretch;width:100%!important;max-width:none!important;height:min(75%,560px)!important;min-height:0!important;max-height:100%!important;overflow:auto;overscroll-behavior:contain;z-index:12;background:#f8fbfd;box-shadow:0 -8px 32px #1e38502c!important;border:1px solid #c9dbe5;border-radius:14px 14px 0 0;padding-bottom:8px}'+
+'.app.ui-mobile .body>.left .library-scroll,.app.ui-mobile .right>#inspector,.app.ui-mobile .right>#nxLayerPanel{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}.app.ui-mobile .body>.left .sidehead,.app.ui-mobile .body>.right .sidehead{padding:8px 12px}.app.ui-mobile .nx-panel-rail{min-height:0;padding:0;border:0}.app.ui-mobile .nx-panel-rail>*{display:none!important}.app.ui-mobile .nx-page-toggle{display:none!important}'+
+'.app.ui-mobile .ui-mobile-close{display:flex!important;position:sticky;top:0;z-index:2;align-items:center;justify-content:space-between;gap:8px;flex:none;padding:6px 10px;background:#eaf2f7;border-bottom:1px solid #c9dbe5;font-weight:700;color:#31566b}.app.ui-mobile .ui-mobile-close .btn{min-height:44px}'+
+'.app.ui-mobile .toolbar{padding:0 8px 10px!important;gap:6px;flex-wrap:nowrap}.app.ui-mobile .toolbar>.toolgroup{flex:0 0 auto!important;flex-wrap:wrap!important;max-width:100%;min-width:0;padding:6px 0!important;border:0!important}.app.ui-mobile .toolbar .optional{display:inline-flex!important}.app.ui-mobile .toolbar .btn,.app.ui-mobile .toolbar select{min-height:44px!important;font-size:13px!important}.app.ui-mobile .toolbar .ui-mobile-close{margin:0 -8px}'+
+'.app.ui-mobile .page-dock-heading{display:flex;flex-wrap:wrap;gap:5px;padding:8px}.app.ui-mobile .page-dock .page-action{display:inline-flex!important}.app.ui-mobile .page-strip{min-height:95px;overflow:auto;flex-wrap:wrap;align-content:flex-start}.app.ui-mobile .page-item{min-height:80px}'+
+'.app.ui-mobile .asset-grid{grid-template-columns:repeat(auto-fill,minmax(98px,1fr))!important;padding:4px 10px 12px}.app.ui-mobile .asset{min-height:92px}.app.ui-mobile .asset svg{height:56px}.app.ui-mobile .body .btn,.app.ui-mobile .library-tab{min-height:44px}.app.ui-mobile .body input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.app.ui-mobile .body select{font-size:16px;min-height:40px}.app.ui-mobile .asset-insert-hint{font-size:12px}'+
+'.app.ui-mobile .canvas-shell{touch-action:none;overscroll-behavior:none;padding:8px!important}.app.ui-mobile.ui-mobile-pan #stage{cursor:grab}.app.ui-mobile.ui-mobile-pan #stage *{cursor:grab!important}'+
+'.app.ui-mobile .ui-mobile-quick{display:flex!important;flex:none;align-items:center;justify-content:center;gap:4px;padding:4px 6px;background:#f1f6fa;border-top:1px solid #d5e1eb;overflow-x:auto}.app.ui-mobile .ui-mobile-quick .btn{min-width:44px;min-height:44px;padding:5px 7px;flex:none;font-size:12px}.app.ui-mobile .ui-mobile-zoom{min-width:42px;text-align:center;color:#45667e;font-size:11px;font-weight:700}'+
+'.app.ui-mobile .ui-mobile-nav{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px 6px 6px;background:#fff;border-top:1px solid #d5e1eb;flex:none}.app.ui-mobile .ui-mobile-nav .btn{min-height:48px;min-width:0;padding:4px 1px;display:flex;flex-direction:column;gap:2px;font-size:10px;border-radius:8px;color:#36586e}.app.ui-mobile .ui-mobile-nav .btn svg{width:19px;height:19px;flex:none}.app.ui-mobile .ui-mobile-nav .active{background:#dcecf4;border-color:#94b6c8}'+
+'.app.ui-mobile .ui-mobile-status{font-size:11px;color:#547283;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;padding:3px 8px;background:#f8fbfd;border-top:1px solid #d5e1eb}'+
+'body.ui-mobile-device .modal-overlay{padding:6px}body.ui-mobile-device .modal{width:min(650px,100%);max-height:calc(100dvh - 16px);padding:16px 12px;overflow:auto}body.ui-mobile-device .modal .btn,body.ui-mobile-device .context-action{min-height:44px}body.ui-mobile-device .modal input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),body.ui-mobile-device .modal select,body.ui-mobile-device .modal textarea{font-size:16px}body.ui-mobile-device .shape-palette{max-width:calc(100vw - 12px);max-height:70dvh;overflow:auto}'+
+'@media(orientation:landscape){.app.ui-mobile .top{display:flex;gap:6px;flex-wrap:nowrap}.app.ui-mobile .top-actions{flex:1;max-width:180px}.app.ui-mobile .top-right{flex:1;justify-content:flex-start}.app.ui-mobile .ui-mobile-nav .btn{min-height:44px;flex-direction:row;justify-content:center;font-size:11px}.app.ui-mobile.ui-mobile-library .body>.left,.app.ui-mobile.ui-mobile-properties .body>.right{inset:0 0 0 auto!important;width:min(380px,65%)!important;height:100%!important;border-radius:12px 0 0 12px}.app.ui-mobile.ui-mobile-tools .toolbar,.app.ui-mobile.ui-mobile-pages .page-dock{height:100%!important}}';
+document.head.append(uiMobileCSS);
+const uiMobileNav=document.createElement('nav');uiMobileNav.className='ui-mobile-nav';uiMobileNav.setAttribute('aria-label','Mobile workspace panels');
+const uiMobileQuick=document.createElement('div');uiMobileQuick.className='ui-mobile-quick';uiMobileQuick.setAttribute('aria-label','Mobile canvas controls');
+const uiMobileStatus=document.createElement('div');uiMobileStatus.className='ui-mobile-status';uiMobileStatus.hidden=true;
+const uiMobileBackdrop=document.createElement('button');uiMobileBackdrop.className='ui-mobile-backdrop';uiMobileBackdrop.setAttribute('aria-label','Close workspace panel');
+$('.body').append(uiMobileBackdrop);nxApp.append(uiMobileStatus,uiMobileQuick,uiMobileNav);
+const uiMobileIcons={
+ library:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ properties:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/><circle cx="9" cy="18" r="2" fill="white"/>',
+ layers:'<path d="m3 8 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 18l9 5 9-5"/>',
+ pages:'<rect x="5" y="3" width="12" height="16" rx="2"/><path d="M9 22h10a2 2 0 0 0 2-2V7"/>',
+ tools:'<path d="m4 20 3-8L18 1l5 5L12 17l-8 3ZM7 12l5 5M15 4l5 5"/>'
+};
+function uiMobileButton(parent,id,label,fn,icon){
+ const b=document.createElement('button');b.type='button';b.className='btn';b.id=id;
+ if(icon)b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+icon+'</svg><span>'+label+'</span>';else b.textContent=label;
+ b.onclick=fn;parent.append(b);return b
+}
+const uiMobileNavButtons={};
+for(const [id,label] of [['library','Library'],['properties','Edit'],['layers','Layers'],['pages','Pages'],['tools','Tools']]){
+ uiMobileNavButtons[id]=uiMobileButton(uiMobileNav,'uiMobile-'+id,label,()=>uiMobileSetPanel(uiMobilePanel===id?'':id),uiMobileIcons[id]);
+ uiMobileNavButtons[id].setAttribute('aria-expanded','false');
+}
+for(const [selector,label] of [['.left','Illustration library'],['.right','Properties / layers'],['.toolbar','Editing tools'],['.page-dock','Figure pages']]){
+ const head=document.createElement('div');head.className='ui-mobile-close';const title=document.createElement('span');title.textContent=label;head.append(title);
+ uiMobileButton(head,'uiMobileClose-'+selector.slice(1), 'Done',()=>uiMobileSetPanel(''));
+ $(selector).prepend(head)
+}
+function uiMobileSetPanel(name){
+ if(!uiMobileActive&&name)return;
+ uiMobilePanel=name;nxApp.classList.toggle('ui-mobile-open',!!name);
+ for(const id of ['library','properties','pages','tools'])nxApp.classList.toggle('ui-mobile-'+id,name===id||(id==='properties'&&name==='layers'));
+ if(name==='layers'||name==='properties')nxLayerMode(name==='layers');
+ for(const [id,b] of Object.entries(uiMobileNavButtons)){b.classList.toggle('active',name===id);b.setAttribute('aria-expanded',String(name===id))}
+ if(!name)closeContextMenu();
+}
+uiMobileBackdrop.onclick=()=>uiMobileSetPanel('');
+const uiMobileSelectBtn=uiMobileButton(uiMobileQuick,'uiMobileSelect','Select',()=>{uiMobileSetPan(false);uiMobileSetPanel('');setTool('select')});
+const uiMobilePanBtn=uiMobileButton(uiMobileQuick,'uiMobilePan','Pan',()=>{uiMobileSetPanel('');uiMobileSetPan(!uiMobilePan)});
+uiMobileButton(uiMobileQuick,'uiMobileFit','Fit',()=>{uiMobileSetPanel('');nxFitAvailable()});
+uiMobileButton(uiMobileQuick,'uiMobileUndo','↶',()=>undo()).setAttribute('aria-label','Undo');
+uiMobileButton(uiMobileQuick,'uiMobileRedo','↷',()=>redo()).setAttribute('aria-label','Redo');
+const uiMobileZoom=document.createElement('span');uiMobileZoom.className='ui-mobile-zoom';uiMobileQuick.append(uiMobileZoom);
+function uiMobileRefreshStatus(){
+ uiMobileZoom.textContent=Math.round(zoom*100)+'%';
+ uiMobileStatus.textContent=uiMobilePan?'Pan mode · drag or pinch with two fingers':('Edit mode · '+({select:'tap to select · drag to move',text:'tap to insert text',box:'drag to draw shape',pen:'tap or drag path nodes',polyPen:'tap path nodes'}[activeTool]||activeTool));
+ uiMobilePanBtn.classList.toggle('active',uiMobilePan);uiMobilePanBtn.setAttribute('aria-pressed',String(uiMobilePan));
+ uiMobileSelectBtn.classList.toggle('active',!uiMobilePan&&activeTool==='select');
+}
+function uiMobileSetPan(on){
+ if(pointer||penDrag||uiMobileEditPointer!==null)return;
+ uiMobilePan=!!on;uiMobileFingers.clear();uiMobileGesture=null;nxApp.classList.toggle('ui-mobile-pan',uiMobilePan);uiMobileRefreshStatus()
+}
+const uiMobileZoomBase=setZoom;setZoom=function(v){uiMobileZoomBase(v);uiMobileRefreshStatus()};
+const uiMobileToolBase=setTool;setTool=function(name){uiMobileToolBase(name);if(uiMobileActive){uiMobileSetPan(false);if(uiMobilePanel==='tools')uiMobileSetPanel('')}uiMobileRefreshStatus()};
+const uiMobilePanelsBase=nxUpdatePanels;nxUpdatePanels=function(){uiMobilePanelsBase();if(uiMobileActive)for(const id of ['left','right','pages','tools'])nxApp.classList.remove('nx-hide-'+id)};
+function uiMobileApply(){
+ const next=uiMobileQuery.matches;if(next===uiMobileActive)return;
+ uiMobileActive=next;nxApp.classList.toggle('ui-mobile',next);document.body.classList.toggle('ui-mobile-device',next);uiMobileStatus.hidden=!next;
+ uiMobileSetPanel('');uiMobileSetPan(false);nxUpdatePanels();requestAnimationFrame(()=>nxFitAvailable());
+}
+uiMobileQuery.addEventListener('change',uiMobileApply);
+uiMobileOrientation.addEventListener('change',()=>{if(uiMobileActive){uiMobileSetPanel('');requestAnimationFrame(()=>nxFitAvailable())}});
+function uiMobileCentroid(){
+ const a=[...uiMobileFingers.values()].slice(0,2);if(!a.length)return null;
+ return a.length===1?{x:a[0].x,y:a[0].y,d:0}:{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}
+}
+function uiMobileRebase(){
+ const c=uiMobileCentroid();uiMobileGesture=c?{...c,zoom,anchor:point({clientX:c.x,clientY:c.y})}:null
+}
+function uiMobileConsume(e){if(e.cancelable)e.preventDefault();e.stopImmediatePropagation()}
+canvasShell.addEventListener('pointerdown',e=>{
+ if(!uiMobileActive||e.pointerType==='mouse')return;
+ if(uiMobilePan){
+  uiMobileConsume(e);uiMobileFingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{canvasShell.setPointerCapture(e.pointerId)}catch{}uiMobileRebase();return
+ }
+ if(uiMobileEditPointer!==null){uiMobileConsume(e);return}
+ uiMobileEditPointer=e.pointerId
+},true);
+canvasShell.addEventListener('pointermove',e=>{
+ if(!uiMobileActive||e.pointerType==='mouse')return;
+ if(!uiMobilePan){if(uiMobileEditPointer!==null&&e.pointerId!==uiMobileEditPointer)uiMobileConsume(e);return}
+ uiMobileConsume(e);if(!uiMobileFingers.has(e.pointerId)||!uiMobileGesture)return;
+ uiMobileFingers.set(e.pointerId,{x:e.clientX,y:e.clientY});const c=uiMobileCentroid(),g=uiMobileGesture;
+ if(g.d>0&&c.d>0)setZoom(g.zoom*c.d/g.d);
+ const m=stage.getScreenCTM();if(m){const p=new DOMPoint(g.anchor.x,g.anchor.y).matrixTransform(m);canvasShell.scrollLeft+=p.x-c.x;canvasShell.scrollTop+=p.y-c.y}
+},true);
+function uiMobileEnd(e){
+ if(!uiMobileActive||e.pointerType==='mouse')return;
+ if(uiMobilePan){uiMobileConsume(e);uiMobileFingers.delete(e.pointerId);uiMobileRebase();return}
+ if(e.pointerId===uiMobileEditPointer){uiMobileEditPointer=null;return}
+ uiMobileConsume(e)
+}
+canvasShell.addEventListener('pointerup',uiMobileEnd,true);canvasShell.addEventListener('pointercancel',uiMobileEnd,true);
+canvasShell.addEventListener('lostpointercapture',e=>{if(uiMobileFingers.delete(e.pointerId))uiMobileRebase();if(e.pointerId===uiMobileEditPointer)uiMobileEditPointer=null});
+document.addEventListener('keydown',e=>{if(uiMobileActive&&uiMobilePanel&&e.key==='Escape'&&$('#modalOverlay').classList.contains('hidden'))uiMobileSetPanel('')});
+uiMobileApply();uiMobileRefreshStatus();
 
 render();
 

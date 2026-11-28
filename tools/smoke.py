@@ -704,5 +704,66 @@ with sync_playwright() as p:
         assert page.evaluate("objects[0].text") == "Second page"
         assert not errors, errors
         page.close()
+    # Mobile first-pass: touch viewport, shared panels and native document invariants.
+    for name in ("index.html", "SCiFi-Studio.html"):
+        context=browser.new_context(viewport={"width":412,"height":892},device_scale_factor=3,has_touch=True,is_mobile=True)
+        page=context.new_page()
+        errors=[]
+        page.on("pageerror",lambda e: errors.append(str(e)))
+        page.goto((ROOT/name).as_uri())
+        page.wait_for_function("() => uiMobileActive")
+        assert page.locator("#uiMobile-library").is_visible()
+        assert page.locator("#uiMobile-tools").is_visible()
+        assert not page.locator(".body>.left").is_visible()
+        assert not page.locator(".body>.right").is_visible()
+        assert page.locator("#canvasShell").bounding_box()["width"]>=400
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth+1")
+        before=page.evaluate("JSON.stringify(currentProjectData())")
+        page.locator("#uiMobile-library").tap()
+        assert page.locator("#assetSearch").is_visible()
+        page.locator("#assetSearch").fill("DNA")
+        assert page.locator("[data-asset]").count()>0
+        page.locator("#uiMobileClose-left").tap()
+        page.locator("#uiMobile-properties").tap()
+        assert page.locator("#inspector").is_visible()
+        page.locator("#uiMobile-layers").tap()
+        assert page.locator("#nxLayerPanel").is_visible()
+        page.locator("#uiMobileClose-right").tap()
+        page.locator("#uiMobile-pages").tap()
+        assert page.locator("#addPageBtn").is_visible()
+        page.locator("#uiMobileClose-page-dock").tap()
+        page.locator("#uiMobile-tools").tap()
+        assert page.locator("#textTool").is_visible()
+        page.locator("#textTool").tap()
+        assert page.evaluate("activeTool==='text' && uiMobilePanel===''")
+        page.locator("#uiMobileSelect").tap()
+        assert page.evaluate("JSON.stringify(currentProjectData())")==before
+        page.locator("#uiMobilePan").tap()
+        assert page.locator("#uiMobilePan").get_attribute("aria-pressed")=="true"
+        # Synthetic two-contact pointer stream: zoom without entering drawing handlers.
+        assert page.evaluate("""() => {
+            const b=canvasShell.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2,z=zoom;
+            function send(type,id,dx){canvasShell.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:id,clientX:x+dx,clientY:y,button:0,buttons:type==='pointerup'?0:1}))}
+            send('pointerdown',11,-30);send('pointerdown',12,30);
+            send('pointermove',12,80);send('pointerup',12,80);send('pointerup',11,-30);
+            return zoom>z && uiMobileFingers.size===0 && !pointer;
+        }""")
+        assert page.evaluate("JSON.stringify(currentProjectData())")==before
+        page.locator("#uiMobileSelect").tap()
+        assert page.locator("#uiMobilePan").get_attribute("aria-pressed")=="false"
+        page.locator("#uiMobileFit").tap()
+        page.set_viewport_size({"width":892,"height":412})
+        page.wait_for_function("() => innerWidth>innerHeight && uiMobileActive")
+        page.locator("#uiMobile-library").tap()
+        assert page.locator("#assetSearch").is_visible()
+        page.locator("#uiMobileClose-left").tap()
+        page.set_viewport_size({"width":1440,"height":900})
+        page.wait_for_function("() => !uiMobileActive")
+        assert not page.locator("#uiMobile-library").is_visible()
+        assert page.locator(".body>.left").is_visible()
+        assert page.locator(".body>.right").is_visible()
+        assert page.evaluate("JSON.stringify(currentProjectData())")==before
+        assert not errors,errors
+        context.close()
     browser.close()
 print("Chromium startup, library categories and search passed.")
