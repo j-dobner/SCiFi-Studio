@@ -751,6 +751,42 @@ with sync_playwright() as p:
         assert page.evaluate("JSON.stringify(currentProjectData())")==before
         page.locator("#uiMobileSelect").tap()
         assert page.locator("#uiMobilePan").get_attribute("aria-pressed")=="false"
+        # v24.2: pinch from normal edit mode; no artwork/history mutation.
+        assert page.evaluate("""() => {
+            const b=canvasShell.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2,z=zoom;
+            function send(type,id,dx){canvasShell.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:id,clientX:x+dx,clientY:y,button:0,buttons:type==='pointerup'?0:1}))}
+            send('pointerdown',21,-30);send('pointerdown',22,30);
+            send('pointermove',22,80);send('pointerup',22,80);send('pointerup',21,-30);
+            return zoom>z && !uiMobilePinch && !uiMobilePan && !pointer;
+        }""")
+        assert page.evaluate("JSON.stringify(currentProjectData())")==before
+        page.evaluate("setTool('pen')")
+        assert page.locator("#scifiPenPanel").is_visible()
+        assert not page.locator("#scifiPenPanel .pen-paint-controls").is_visible()
+        page.locator("#uiMobileOptions-scifiPenPanel").tap()
+        assert page.locator("#scifiPenPanel .pen-paint-controls").is_visible()
+        page.locator("#uiMobileOptions-scifiPenPanel").tap()
+        page.locator("#uiMobileSelect").tap()
+        # Verify the selection toolbar and additive double tap via native selection state.
+        page.evaluate("""() => {
+            window.mobileOriginal=snapshot();
+            const a=makeShape('ellipse',100,100,80,80),b=makeShape('ellipse',220,100,80,80);
+            objects.push(a,b);window.mobileA=a.id;window.mobileB=b.id;selectOnly(a.id);render();
+        }""")
+        assert page.locator("#uiMobileSelection").is_visible()
+        assert page.evaluate("""() => {
+            uiMobileBeforeTouch={selection:[mobileA]};selectOnly(mobileB);
+            uiMobileTap(mobileB,{clientX:120,clientY:120});
+            uiMobileBeforeTouch={selection:[mobileB]};
+            uiMobileTap(mobileB,{clientX:120,clientY:120});uiMobileBeforeTouch=null;render();
+            return selectedIds.has(mobileA)&&selectedIds.has(mobileB)
+        }""")
+        page.locator("#uiMobileSelDuplicate").tap()
+        assert page.evaluate("objects.length===4")
+        page.locator("#uiMobileSelDelete").tap()
+        assert page.evaluate("objects.length===2")
+        page.evaluate("restoreSnapshot(mobileOriginal);selectOnly(null);render()")
+        assert page.evaluate("JSON.stringify(currentProjectData())")==before
         page.locator("#uiMobileFit").tap()
         page.set_viewport_size({"width":892,"height":412})
         page.wait_for_function("() => innerWidth>innerHeight && uiMobileActive")

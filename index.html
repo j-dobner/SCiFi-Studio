@@ -303,7 +303,7 @@ No historical artwork collections are included in this preview.
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v24.1 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
+    <div class="brand"><div class="brandmark" id="brandIcon"></div><div><div class="brandname" title="Stem Cell integrated Figure illustrator">SC<span style="color:#6e8af4">i</span>Fi<span style="font-weight:600;font-size:10px;vertical-align:middle;color:#8e9ab1;margin-left:8px">v24.2 dev</span></div><div class="brandsub">Stem Cell integrated Figure illustrator</div></div></div>
     <div class="top-actions"><span class="statuspill"><i></i> Works offline · no sign-in</span><div class="divider-v"></div><input id="projectName" class="projectname" value="Untitled figure" title="Project name" aria-label="Project name" /></div>
     <div class="top-right"><button class="btn icononly optional" id="undoBtn" title="Undo (Ctrl+Z)"></button><button class="btn icononly optional" id="redoBtn" title="Redo (Ctrl+Y)"></button><div class="divider-v optional"></div><button class="btn optional" id="templatesBtn"></button><button class="btn" id="newProjectBtn" title="New figure"></button><button class="btn" id="galleryBtn" title="Saved projects gallery"></button><button class="btn" id="saveBtn"></button><button class="btn primary" id="exportBtn"></button></div>
   </header>
@@ -1619,6 +1619,8 @@ function handleUp(e){if(penDrag){penDrag=null;return}if(!pointer)return;let s=po
  else if(s.kind==='drawBox'){if(s.moved){let x=Math.min(s.start.x,p.x),y=Math.min(s.start.y,p.y),w=Math.abs(p.x-s.start.x),h=Math.abs(p.y-s.start.y);if(w>10&&h>10){let o=makeShape(drawKind,x,y,w,h);objects.push(o);selectOnly(o.id);pushHistory(s.before)}}scifiAfterDraw('box')}
  else if(s.kind==='marquee'){if(s.moved){const rect=marqueeRect(s.start,p),hits=objects.filter(o=>hitsMarquee(o,rect)).map(o=>o.id);selection([...s.base,...hits])}else if(!s.additive)selectOnly(null)}
  else if(s.kind==='resize'||s.kind==='group-resize'||s.kind==='rotate'||s.kind==='move'){
+  if(uiMobileActive&&e.pointerType==='touch'&&s.kind==='move'&&!s.moved&&s.hitId){pointer=null;scifiNext.guide=[];uiMobileTap(s.hitId,e);render();return}
+  if(uiMobileActive&&e.pointerType==='touch')uiMobileLastTap=null;
   if(s.kind==='move'&&!s.moved&&s.shiftClick&&s.hitId){toggleSelected(s.hitId);lastTextClick=null}
   else if(s.kind==='move'&&!s.moved&&s.hitId){
    let id=s.hitId,o=objects.find(x=>x.id===id),now=performance.now();
@@ -2951,7 +2953,7 @@ function scifiOpenFamilyPicker(asset,where={}){
  $('#scifiFamilyApply').onclick=()=>{if(oldId){const id=oldId;closeModal();scifiReplaceVariant(id,choice)}else{scifiVariantUse.set(fam.id,choice.id);const {x=440,y=250,withLabel=false}=where;closeModal();addAsset(choice.id,x,y,withLabel);renderAssets()}};
 }
 // Double-click a completed path to enter node editing without ungrouping or switching tools manually.
-stage.addEventListener('dblclick',e=>{const el=e.target.closest('[data-id]');const id=el?.dataset.id;const o=objects.find(v=>v.id===id);if(!o||o.type!=='path')return;setTool('select');selectIndividual(id);activePathEditId=id;scifiSelectedNodeIndex=0;render();e.preventDefault()},true);
+stage.addEventListener('dblclick',e=>{if(uiMobileActive&&performance.now()-uiMobileTouchTime<700)return;const el=e.target.closest('[data-id]');const id=el?.dataset.id;const o=objects.find(v=>v.id===id);if(!o||o.type!=='path')return;setTool('select');selectIndividual(id);activePathEditId=id;scifiSelectedNodeIndex=0;render();e.preventDefault()},true);
 // Add Change variant to properties, and complete native node-level editing.
 const scifiOriginalInspector=renderInspector;
 renderInspector=function(){
@@ -4815,20 +4817,20 @@ uiMobileButton(uiMobileQuick,'uiMobileRedo','↷',()=>redo()).setAttribute('aria
 const uiMobileZoom=document.createElement('span');uiMobileZoom.className='ui-mobile-zoom';uiMobileQuick.append(uiMobileZoom);
 function uiMobileRefreshStatus(){
  uiMobileZoom.textContent=Math.round(zoom*100)+'%';
- uiMobileStatus.textContent=uiMobilePan?'Pan mode · drag or pinch with two fingers':('Edit mode · '+({select:'tap to select · drag to move',text:'tap to insert text',box:'drag to draw shape',pen:'tap or drag path nodes',polyPen:'tap path nodes'}[activeTool]||activeTool));
+ uiMobileStatus.textContent=uiMobilePan?'Pan mode · drag or pinch with two fingers':('Edit mode · '+({select:'tap to select · double-tap to edit/add · pinch to zoom',text:'tap to insert text',box:'drag to draw shape',pen:'tap or drag path nodes',polyPen:'tap path nodes'}[activeTool]||activeTool));
  uiMobilePanBtn.classList.toggle('active',uiMobilePan);uiMobilePanBtn.setAttribute('aria-pressed',String(uiMobilePan));
  uiMobileSelectBtn.classList.toggle('active',!uiMobilePan&&activeTool==='select');
 }
 function uiMobileSetPan(on){
- if(pointer||penDrag||uiMobileEditPointer!==null)return;
- uiMobilePan=!!on;uiMobileFingers.clear();uiMobileGesture=null;nxApp.classList.toggle('ui-mobile-pan',uiMobilePan);uiMobileRefreshStatus()
+ if(pointer||penDrag||uiMobileEditPointer!==null||uiMobilePinch)return;
+ uiMobilePan=!!on;if(!uiMobilePinch){uiMobileFingers.clear();uiMobileGesture=null}nxApp.classList.toggle('ui-mobile-pan',uiMobilePan);uiMobileRefreshStatus()
 }
 const uiMobileZoomBase=setZoom;setZoom=function(v){uiMobileZoomBase(v);uiMobileRefreshStatus()};
 const uiMobileToolBase=setTool;setTool=function(name){uiMobileToolBase(name);if(uiMobileActive){uiMobileSetPan(false);if(uiMobilePanel==='tools')uiMobileSetPanel('')}uiMobileRefreshStatus()};
 const uiMobilePanelsBase=nxUpdatePanels;nxUpdatePanels=function(){uiMobilePanelsBase();if(uiMobileActive)for(const id of ['left','right','pages','tools'])nxApp.classList.remove('nx-hide-'+id)};
 function uiMobileApply(){
  const next=uiMobileQuery.matches;if(next===uiMobileActive)return;
- uiMobileActive=next;nxApp.classList.toggle('ui-mobile',next);document.body.classList.toggle('ui-mobile-device',next);uiMobileStatus.hidden=!next;
+ uiMobileActive=next;if(!next)for(const el of [penPanel,branchPanel,uiMobileSelection]){el.style.removeProperty('left');el.style.removeProperty('top');delete el.dataset.mobileMoved}nxApp.classList.toggle('ui-mobile',next);document.body.classList.toggle('ui-mobile-device',next);uiMobileStatus.hidden=!next;
  uiMobileSetPanel('');uiMobileSetPan(false);nxUpdatePanels();requestAnimationFrame(()=>nxFitAvailable());
 }
 uiMobileQuery.addEventListener('change',uiMobileApply);
@@ -4841,18 +4843,55 @@ function uiMobileRebase(){
  const c=uiMobileCentroid();uiMobileGesture=c?{...c,zoom,anchor:point({clientX:c.x,clientY:c.y})}:null
 }
 function uiMobileConsume(e){if(e.cancelable)e.preventDefault();e.stopImmediatePropagation()}
+let uiMobileTouchTime=-Infinity,uiMobileLastTap=null,uiMobileBeforeTouch=null,uiMobilePinch=false;
+function uiMobileEditOne(id){
+ const o=objects.find(v=>v.id===id);if(!o||o.hidden||o.locked)return;
+ if(o.groupId&&!activeGroupEditId){enterGroupEdit(o.groupId,id);return}
+ if(o.type==='symbol'){openIconWorkspace(id);return}
+ if(o.type==='text'){openTextEditor(id);return}
+ if(o.type==='plot'){plotBuilder(id);return}
+ if(o.type==='qc-card'){openQcCardEditor(id);return}
+ if(o.type==='path'){selectIndividual(id);activePathEditId=id;scifiSelectedNodeIndex=0;render()}
+ uiMobileSetPanel('properties')
+}
+function uiMobileTap(id,e){
+ const now=performance.now(),key=objects.find(o=>o.id===id)?.groupId&&!activeGroupEditId?'group:'+objects.find(o=>o.id===id).groupId:id;
+ const prev=uiMobileLastTap,before=uiMobileBeforeTouch?.selection||[];
+ if(prev&&prev.key===key&&now-prev.time<420&&Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<28){
+  uiMobileLastTap=null;
+  const members=idsInGroup(id),prior=prev.before.filter(v=>objects.some(o=>o.id===v&&!o.hidden&&!o.locked));
+  if(prior.some(v=>!members.includes(v))){selection([...prior,...members]);return}
+  selectOnly(id);uiMobileEditOne(id);return
+ }
+ uiMobileLastTap={key,time:now,x:e.clientX,y:e.clientY,before:[...before]};
+}
+function uiMobileCaptureBefore(){
+ return {snapshot:snapshot(),selection:[...selectedIds],pen:structuredClone(penPoints),tool:activeTool,undos:[...undos],redos:[...redos],path:activePathEditId,node:scifiSelectedNodeIndex}
+}
+function uiMobileCancelTouchEdit(){
+ const b=uiMobileBeforeTouch;pointer=null;penDrag=null;arrowDraft=null;scifiNext.guide=[];lastTextClick=null;uiMobileLastTap=null;
+ if(!b)return;
+ restoreSnapshot(b.snapshot);undos=b.undos;redos=b.redos;selection(b.selection);activePathEditId=b.path;scifiSelectedNodeIndex=b.node;
+ if(activeTool!==b.tool)uiMobileToolBase(b.tool);
+ penPoints=b.pen;updatePenPanel();updateHistory();render();uiMobileBeforeTouch=null
+}
 canvasShell.addEventListener('pointerdown',e=>{
  if(!uiMobileActive||e.pointerType==='mouse')return;
- if(uiMobilePan){
-  uiMobileConsume(e);uiMobileFingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  try{canvasShell.setPointerCapture(e.pointerId)}catch{}uiMobileRebase();return
+ if(e.pointerType==='pen'){if(uiMobilePinch||uiMobilePan){uiMobileConsume(e);return}if(uiMobileEditPointer!==null){uiMobileConsume(e);return}uiMobileEditPointer=e.pointerId;return}
+ uiMobileTouchTime=performance.now();
+ uiMobileFingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(uiMobilePan||uiMobilePinch||uiMobileFingers.size>=2){
+  uiMobileConsume(e);
+  if(!uiMobilePan&&!uiMobilePinch){uiMobilePinch=true;uiMobileCancelTouchEdit();uiMobileEditPointer=null}
+  for(const id of uiMobileFingers.keys())try{canvasShell.setPointerCapture(id)}catch{}
+  uiMobileRebase();return
  }
- if(uiMobileEditPointer!==null){uiMobileConsume(e);return}
- uiMobileEditPointer=e.pointerId
+ if(uiMobileEditPointer!==null){uiMobileFingers.delete(e.pointerId);uiMobileConsume(e);return}
+ uiMobileEditPointer=e.pointerId;uiMobileBeforeTouch=uiMobileCaptureBefore()
 },true);
 canvasShell.addEventListener('pointermove',e=>{
  if(!uiMobileActive||e.pointerType==='mouse')return;
- if(!uiMobilePan){if(uiMobileEditPointer!==null&&e.pointerId!==uiMobileEditPointer)uiMobileConsume(e);return}
+ if(!uiMobilePan&&!uiMobilePinch){if(uiMobileEditPointer!==null&&e.pointerId!==uiMobileEditPointer)uiMobileConsume(e);return}
  uiMobileConsume(e);if(!uiMobileFingers.has(e.pointerId)||!uiMobileGesture)return;
  uiMobileFingers.set(e.pointerId,{x:e.clientX,y:e.clientY});const c=uiMobileCentroid(),g=uiMobileGesture;
  if(g.d>0&&c.d>0)setZoom(g.zoom*c.d/g.d);
@@ -4860,13 +4899,84 @@ canvasShell.addEventListener('pointermove',e=>{
 },true);
 function uiMobileEnd(e){
  if(!uiMobileActive||e.pointerType==='mouse')return;
- if(uiMobilePan){uiMobileConsume(e);uiMobileFingers.delete(e.pointerId);uiMobileRebase();return}
- if(e.pointerId===uiMobileEditPointer){uiMobileEditPointer=null;return}
+ if(uiMobilePan||uiMobilePinch){
+  uiMobileConsume(e);uiMobileFingers.delete(e.pointerId);uiMobileRebase();
+  if(!uiMobileFingers.size){uiMobilePinch=false;uiMobileBeforeTouch=null;uiMobileRefreshStatus()}
+  return
+ }
+ uiMobileFingers.delete(e.pointerId);
+ if(e.pointerId===uiMobileEditPointer){
+  uiMobileEditPointer=null;
+  if(e.type==='pointercancel'&&e.pointerType==='touch'){uiMobileConsume(e);uiMobileCancelTouchEdit()}
+  else queueMicrotask(()=>{uiMobileBeforeTouch=null});
+  return
+ }
  uiMobileConsume(e)
 }
 canvasShell.addEventListener('pointerup',uiMobileEnd,true);canvasShell.addEventListener('pointercancel',uiMobileEnd,true);
-canvasShell.addEventListener('lostpointercapture',e=>{if(uiMobileFingers.delete(e.pointerId))uiMobileRebase();if(e.pointerId===uiMobileEditPointer)uiMobileEditPointer=null});
+canvasShell.addEventListener('lostpointercapture',e=>{
+ // Capture transfers from stage to shell when pinching: do not drop those contacts.
+ if(uiMobilePinch||uiMobilePan)return;
+ if(e.pointerId===uiMobileEditPointer){uiMobileEditPointer=null;uiMobileFingers.delete(e.pointerId);uiMobileCancelTouchEdit()}
+});
 document.addEventListener('keydown',e=>{if(uiMobileActive&&uiMobilePanel&&e.key==='Escape'&&$('#modalOverlay').classList.contains('hidden'))uiMobileSetPanel('')});
+/* Compact, draggable touch tool and selection palettes. */
+const uiMobileFloatCSS=document.createElement('style');uiMobileFloatCSS.textContent=
+'.ui-mobile-float-head,.ui-mobile-selection{display:none!important}'+
+'body.ui-mobile-device .ui-mobile-float-head{display:flex!important;align-items:center;justify-content:space-between;gap:4px;width:100%;flex:none;min-height:36px}'+
+'body.ui-mobile-device .ui-mobile-float-grip{touch-action:none;cursor:grab;user-select:none;flex:1;min-width:0;font-size:12px;padding:8px 4px;color:#31566b;font-weight:700}'+
+'body.ui-mobile-device .ui-mobile-float-head button{min-height:36px;padding:4px 8px;font-size:11px}'+
+'body.ui-mobile-device #scifiPenPanel:not(.hidden),body.ui-mobile-device #scifiBranchDrawPanel:not(.hidden),body.ui-mobile-device .ui-mobile-selection:not(.hidden){display:flex!important;position:fixed;left:8px;top:104px;bottom:auto;right:auto;transform:none;width:max-content;max-width:calc(100vw - 16px);max-height:45dvh;overflow:auto;z-index:15;gap:4px;padding:6px;border:1px solid #a8c4d2;border-radius:10px;background:#fff;box-shadow:0 3px 14px #203c5429;flex-wrap:wrap;align-items:center;font-size:11px}'+
+'body.ui-mobile-device #scifiPenPanel>strong,body.ui-mobile-device #scifiPenPanel>.scifi-pen-hint,body.ui-mobile-device #scifiBranchDrawPanel>strong,body.ui-mobile-device #scifiBranchDrawPanel>span{display:none!important}'+
+'body.ui-mobile-device #scifiPenPanel .pen-paint-controls{flex-basis:100%;display:grid;grid-template-columns:1fr;gap:4px}body.ui-mobile-device #scifiPenPanel:not(.ui-mobile-expanded) .pen-paint-controls{display:none!important}'+
+'body.ui-mobile-device #scifiPenPanel .scifi-pen-actions{display:flex;flex-wrap:wrap;gap:4px;flex:1;justify-content:flex-start}body.ui-mobile-device #scifiPenPanel .scifi-pen-actions button{min-height:40px;padding:4px 7px;font-size:11px}'+
+'body.ui-mobile-device #scifiPenPanel #scifiPenCount{padding:3px 4px;font-size:10px}body.ui-mobile-device #scifiBranchDrawPanel:not(.ui-mobile-expanded)>label{display:none!important}body.ui-mobile-device #scifiBranchDrawPanel.ui-mobile-expanded{width:min(340px,calc(100vw - 16px))}body.ui-mobile-device #scifiBranchDrawPanel label{font-size:12px}'+
+'body.ui-mobile-device .ui-mobile-selection .btn{min-height:40px;padding:4px 8px;font-size:11px;white-space:nowrap}body.ui-mobile-device .ui-mobile-selection .ui-mobile-float-head{width:auto;min-height:32px;gap:2px}body.ui-mobile-device .ui-mobile-selection .ui-mobile-float-grip{font-size:15px;min-width:26px}'+
+'body.ui-mobile-device:has(.app.ui-mobile-open) .ui-mobile-selection,body.ui-mobile-device:has(.app.ui-mobile-open) #scifiPenPanel,body.ui-mobile-device:has(.app.ui-mobile-open) #scifiBranchDrawPanel{visibility:hidden}body.ui-mobile-device:has(#modalOverlay:not(.hidden)) .ui-mobile-selection,body.ui-mobile-device:has(#modalOverlay:not(.hidden)) #scifiPenPanel,body.ui-mobile-device:has(#modalOverlay:not(.hidden)) #scifiBranchDrawPanel{visibility:hidden}';
+document.head.append(uiMobileFloatCSS);
+function uiMobileFloatPosition(el,x,y){
+ const c=canvasShell.getBoundingClientRect(),r=el.getBoundingClientRect();
+ const left=Math.max(c.left+4,Math.min(x,c.right-r.width-4)),top=Math.max(c.top+4,Math.min(y,c.bottom-r.height-4));
+ el.style.left=left+'px';el.style.top=top+'px';
+}
+function uiMobileFloatHead(el,label,expand){
+ const head=document.createElement('div');head.className='ui-mobile-float-head';
+ const grip=document.createElement('span');grip.className='ui-mobile-float-grip';grip.textContent='⠿ '+label;grip.title='Drag to move controls';head.append(grip);
+ if(expand){const b=uiMobileButton(head,'uiMobileOptions-'+el.id,'Options ▾',()=>{
+  const on=el.classList.toggle('ui-mobile-expanded');b.textContent=on?'Options ▴':'Options ▾';b.setAttribute('aria-expanded',String(on));
+  requestAnimationFrame(()=>{const r=el.getBoundingClientRect();uiMobileFloatPosition(el,r.left,r.top)})
+ });b.setAttribute('aria-expanded','false')}
+ el.prepend(head);let drag=null;
+ grip.addEventListener('pointerdown',e=>{if(!uiMobileActive)return;e.preventDefault();const r=el.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};grip.setPointerCapture(e.pointerId)});
+ grip.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId)return;el.dataset.mobileMoved='1';uiMobileFloatPosition(el,e.clientX-drag.x,e.clientY-drag.y)});
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])grip.addEventListener(type,()=>{drag=null});
+}
+uiMobileFloatHead(penPanel,'Pen',true);uiMobileFloatHead(branchPanel,'Branch',true);
+const uiMobileSelection=document.createElement('div');uiMobileSelection.id='uiMobileSelection';uiMobileSelection.className='ui-mobile-selection hidden';uiMobileSelection.setAttribute('aria-label','Selection actions');document.body.append(uiMobileSelection);
+uiMobileFloatHead(uiMobileSelection,'',false);
+const uiMobileCount=document.createElement('span');uiMobileCount.style.cssText='font-size:11px;color:#45677b;font-weight:700';uiMobileSelection.append(uiMobileCount);
+uiMobileButton(uiMobileSelection,'uiMobileSelDuplicate','Duplicate',()=>duplicate());
+uiMobileButton(uiMobileSelection,'uiMobileSelDelete','Delete',()=>deleteSelected());
+uiMobileButton(uiMobileSelection,'uiMobileSelEdit','Edit',()=>uiMobileSetPanel('properties'));
+uiMobileButton(uiMobileSelection,'uiMobileSelClear','×',()=>{selectOnly(null);render()}).setAttribute('aria-label','Clear selection');
+function uiMobileFloatRefresh(){
+ const on=uiMobileActive&&!uiMobilePanel&&!uiMobilePan&&!uiMobilePinch&&activeTool==='select'&&selectedIds.size>0;
+ uiMobileSelection.classList.toggle('hidden',!on);uiMobileCount.textContent=selectedIds.size===1?'1 selected':selectedIds.size+' selected';
+ if(!uiMobileActive)return;
+ for(const el of [penPanel,branchPanel,uiMobileSelection]){
+  if(el.classList.contains('hidden'))continue;
+  const c=canvasShell.getBoundingClientRect(),r=el.getBoundingClientRect();
+  if(el.dataset.mobileMoved)uiMobileFloatPosition(el,r.left,r.top);
+  else uiMobileFloatPosition(el,c.left+6,c.top+6)
+ }
+}
+const uiMobileFloatRender=render;render=function(){uiMobileFloatRender();uiMobileFloatRefresh()};
+const uiMobileFloatTool=setTool;setTool=function(name){uiMobileFloatTool(name);uiMobileFloatRefresh()};
+const uiMobileFloatPanel=uiMobileSetPanel;uiMobileSetPanel=function(name){uiMobileFloatPanel(name);uiMobileFloatRefresh()};
+const uiMobileFloatPan=uiMobileSetPan;uiMobileSetPan=function(on){uiMobileFloatPan(on);uiMobileFloatRefresh()};
+const uiMobileFloatStatus=uiMobileRefreshStatus;uiMobileRefreshStatus=function(){uiMobileFloatStatus();uiMobileFloatRefresh()};
+window.addEventListener('resize',()=>{if(uiMobileActive)requestAnimationFrame(uiMobileFloatRefresh)});
+
 uiMobileApply();uiMobileRefreshStatus();
 
 render();
